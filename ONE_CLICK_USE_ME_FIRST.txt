@@ -1,0 +1,24 @@
+FASTEST USE
+
+1. Create an empty folder, for example: waitlist-project
+2. Extract this zip there
+3. Open Terminal in that folder
+4. Run:
+   chmod +x setup-waitlist.sh setup-waitlist.command scripts/*.sh
+   ./setup-waitlist.sh
+5. Open OpenClaw in this folder/repo
+6. Copy-paste AUTONOMOUS_MASTER_PROMPT.txt
+7. Leave it to work
+
+Where to check progress:
+- outputs/builder_output.md
+- outputs/qa_output.md
+- outputs/devops_output.md
+- outputs/product_output.md
+- outputs/final_orchestrator_output.md
+- outputs/user_test_instructions.md
+
+When the build is far enough, read:
+- outputs/user_test_instructions.md
+
+That file should tell you exactly how to click through and test the app by hand.

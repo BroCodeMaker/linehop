@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id        String          @id @default(uuid())
+  name      String
+  slug      String          @unique
+  timezone  String          @default("Europe/Bucharest")
+  createdAt DateTime        @default(now())
+  users     RestaurantUser[]
+  entries   WaitlistEntry[]
+}
+
+model RestaurantUser {
+  id           String     @id @default(uuid())
+  restaurantId String
+  email        String
+  passwordHash String
+  role         String     @default("staff")
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, email])
+}
+
+model WaitlistEntry {
+  id                String          @id @default(uuid())
+  restaurantId      String
+  publicToken       String          @unique
+  partySize         Int
+  phoneE164         String
+  guestName         String?
+  status            String
+  createdAt         DateTime        @default(now())
+  calledAt          DateTime?
+  confirmedAt       DateTime?
+  seatedAt          DateTime?
+  skippedAt         DateTime?
+  expiredAt         DateTime?
+  canceledAt        DateTime?
+  confirmDeadlineAt DateTime?
+  arrivalDeadlineAt DateTime?
+
+  restaurant        Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  messageEvents     MessageEvent[]
+
+  @@index([restaurantId, status, createdAt])
+}
+
+model MessageEvent {
+  id              String          @id @default(uuid())
+  entryId         String
+  direction       String          @default("outbound")
+  provider        String          @default("mock")
+  phoneE164       String
+  body            String
+  status          String          @default("sent")
+  externalId      String?
+  createdAt       DateTime        @default(now())
+
+  entry           WaitlistEntry   @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([entryId, direction, createdAt])
+}

@@ -1,0 +1,45 @@
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { getPositionInQueue } from "@/lib/status";
+
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ publicToken: string }> }
+) {
+  try {
+    const { publicToken } = await context.params;
+
+    const entry = await prisma.waitlistEntry.findUnique({
+      where: { publicToken },
+      include: { restaurant: { select: { name: true, slug: true } } },
+    });
+
+    if (!entry) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    let position: number | null = null;
+    if (entry.status === "WAITING" || entry.status === "CALLED") {
+      position = (await getPositionInQueue(entry.restaurantId, entry.createdAt)) + 1;
+    }
+
+    return NextResponse.json({
+      publicToken: entry.publicToken,
+      status: entry.status,
+      partySize: entry.partySize,
+      guestName: entry.guestName,
+      restaurantName: entry.restaurant.name,
+      restaurantSlug: entry.restaurant.slug,
+      position,
+      calledAt: entry.calledAt,
+      confirmedAt: entry.confirmedAt,
+      seatedAt: entry.seatedAt,
+      createdAt: entry.createdAt,
+      confirmDeadlineAt: entry.confirmDeadlineAt,
+      arrivalDeadlineAt: entry.arrivalDeadlineAt,
+    });
+  } catch (err) {
+    console.error("[entry]", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

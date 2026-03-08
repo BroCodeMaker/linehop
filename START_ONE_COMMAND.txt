@@ -1,0 +1,22 @@
+ONE COMMAND START
+
+1. Unzip this package into a single folder named waitlist.
+2. Open Terminal in that folder.
+3. Run:
+   chmod +x setup-waitlist.sh setup-waitlist.command scripts/*.sh
+   ./setup-waitlist.sh
+
+After that:
+4. Fill .env.openclaw locally with your own credentials and WhatsApp notify target.
+5. Start app:
+   npm run dev
+6. Open OpenClaw with this folder/repo.
+7. Copy-paste ONE_SHOT_OPENCLAW_PROMPT.txt into OpenClaw.
+
+OpenClaw should then:
+- create/use agents
+- use Claude Code for coding-heavy work
+- bring up the local stack
+- write outputs in /outputs
+- stop safely on blockers
+- notify on WhatsApp if configured
