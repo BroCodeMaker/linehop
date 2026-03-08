@@ -153,7 +153,7 @@ export default function StatusPage() {
             <p style={{ textAlign: "center", fontSize: 14, color: "#9a3412", fontWeight: 600, margin: "0 0 12px" }}>
               Confirmă că vii la restaurant!
             </p>
-            {confirmSecs != null && <CountdownRing seconds={confirmSecs} total={300} />}
+            {confirmSecs != null && <CountdownRing seconds={confirmSecs} total={120} />}
             <button onClick={handleConfirm} disabled={confirming} style={s.confirmBtn}>
               {confirming ? "Se confirmă..." : "✅ Confirm că vin!"}
             </button>

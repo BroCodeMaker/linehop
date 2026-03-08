@@ -254,7 +254,7 @@ export default function DashboardPage() {
                       <span style={s.badge}>{entry.status}</span>
                       {entry.status === "CALLED" && entry.confirmDeadlineAt && (
                         <div style={{ marginTop: 4 }}>
-                          <CountdownTimer deadline={entry.confirmDeadlineAt} totalSec={300} />
+                          <CountdownTimer deadline={entry.confirmDeadlineAt} totalSec={120} />
                         </div>
                       )}
                       {entry.status === "CONFIRMED" && entry.arrivalDeadlineAt && (

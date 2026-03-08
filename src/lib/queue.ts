@@ -23,7 +23,7 @@ export async function callNext(restaurantId: string) {
     data: {
       status: 'CALLED',
       calledAt: now,
-      confirmDeadlineAt: new Date(now.getTime() + 300 * 1000),
+      confirmDeadlineAt: new Date(now.getTime() + 120 * 1000), // 2 min to confirm
     },
   })
 }
