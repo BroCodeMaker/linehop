@@ -3,24 +3,6 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "outputDirectory": ".next",
-  "env": {
-    "DATABASE_URL": {
-      "description": "PostgreSQL connection string from Neon"
-    },
-    "NEXTAUTH_SECRET": {
-      "description": "NextAuth secret key (generate: openssl rand -base64 32)"
-    },
-    "NEXTAUTH_URL": {
-      "description": "Your Vercel deployment URL"
-    },
-    "WHATSAPP_PROVIDER": {
-      "description": "Notification provider (twilio or mock)"
-    },
-    "WHATSAPP_API_TOKEN": {
-      "description": "Twilio API token for WhatsApp messaging"
-    }
-  },
   "crons": [
     {
       "path": "/api/internal/expire",
