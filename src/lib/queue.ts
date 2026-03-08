@@ -23,7 +23,7 @@ export async function callNext(restaurantId: string) {
     data: {
       status: 'CALLED',
       calledAt: now,
-      confirmDeadlineAt: new Date(now.getTime() + 120 * 1000),
+      confirmDeadlineAt: new Date(now.getTime() + 300 * 1000),
     },
   })
 }
@@ -45,6 +45,17 @@ export async function skipEntry(restaurantId: string, entryId: string) {
 export async function cancelEntry(restaurantId: string, entryId: string) {
   return prisma.waitlistEntry.updateMany({
     where: { id: entryId, restaurantId },
+    data: { status: 'CANCELED', canceledAt: new Date() },
+  })
+}
+
+export async function closeRestaurant(restaurantId: string) {
+  await prisma.restaurant.update({
+    where: { id: restaurantId },
+    data: { status: 'CLOSED' },
+  })
+  return prisma.waitlistEntry.updateMany({
+    where: { restaurantId, status: { in: ['WAITING', 'CALLED', 'CONFIRMED'] } },
     data: { status: 'CANCELED', canceledAt: new Date() },
   })
 }

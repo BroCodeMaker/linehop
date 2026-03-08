@@ -12,6 +12,7 @@ model Restaurant {
   name      String
   slug      String          @unique
   timezone  String          @default("Europe/Bucharest")
+  status    String          @default("OPEN")
   createdAt DateTime        @default(now())
   users     RestaurantUser[]
   entries   WaitlistEntry[]

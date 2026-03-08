@@ -30,6 +30,10 @@ export async function POST(
       return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
     }
 
+    if (restaurant.status !== "FULL") {
+      return NextResponse.json({ error: "Waitlist not active", restaurantStatus: restaurant.status }, { status: 409 });
+    }
+
     const phoneE164 = normalizePhone(phone);
     const publicToken = crypto.randomUUID();
     const now = new Date();

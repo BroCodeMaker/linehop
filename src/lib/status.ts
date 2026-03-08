@@ -11,5 +11,5 @@ export async function getPositionInQueue(restaurantId: string, createdAt: Date):
 }
 
 export function estimateEtaMinutes(position: number): number {
-  return Math.max(0, position * 5)
+  return position * 20
 }
