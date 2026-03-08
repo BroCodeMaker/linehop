@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 type Entry = {
   id: string;
@@ -31,10 +31,16 @@ function timeAgo(date: string) {
 
 export default function DashboardPage() {
   const { restaurantId } = useParams<{ restaurantId: string }>();
+  const router = useRouter();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [callingNext, setCallingNext] = useState(false);
   const [message, setMessage] = useState("");
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/app/login");
+  }
 
   async function fetchQueue() {
     try {
@@ -83,6 +89,7 @@ export default function DashboardPage() {
       <div style={styles.header}>
         <h1 style={styles.title}>🍽️ Queue Dashboard</h1>
         <div style={styles.stats}>
+          <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
           <span style={{ ...styles.stat, background: "#fef3c7" }}>⏳ {waiting} waiting</span>
           <span style={{ ...styles.stat, background: "#fed7aa" }}>📲 {called} called</span>
         </div>
@@ -179,4 +186,9 @@ const styles: Record<string, React.CSSProperties> = {
   badge: { fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "4px", background: "rgba(0,0,0,0.06)" },
   actionBtn: { padding: "5px 12px", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600, marginRight: "6px" },
   refresh: { fontSize: "11px", color: "#bbb", marginTop: "24px" },
+  logoutBtn: {
+    padding: "6px 14px", background: "transparent", color: "#9ca3af",
+    border: "1px solid #e5e7eb", borderRadius: "6px", cursor: "pointer",
+    fontSize: "12px", fontWeight: 600,
+  },
 };
