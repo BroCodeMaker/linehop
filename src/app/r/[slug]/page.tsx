@@ -53,7 +53,14 @@ export default function JoinPage() {
         body: JSON.stringify({ partySize, phone, guestName: guestName || undefined }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || "Something went wrong"); return; }
+      if (!res.ok) {
+        if (data.blocked) {
+          setError("⌛ Numărul tău a expirat din lista de așteptare în această seară. Te rugăm să revii mâine sau să contactezi personalul restaurantului.");
+        } else {
+          setError(data.error || "Something went wrong");
+        }
+        return;
+      }
       router.push(data.statusUrl);
     } catch {
       setError("Network error. Please try again.");

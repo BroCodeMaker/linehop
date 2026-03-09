@@ -35,6 +35,23 @@ export async function POST(
     }
 
     const phoneE164 = normalizePhone(phone);
+
+    // Block phone if it expired at this restaurant today (last 16h = same evening)
+    const recentExpiry = await prisma.waitlistEntry.findFirst({
+      where: {
+        restaurantId: restaurant.id,
+        phoneE164,
+        status: 'EXPIRED',
+        expiredAt: { gte: new Date(Date.now() - 16 * 60 * 60 * 1000) },
+      },
+    });
+    if (recentExpiry) {
+      return NextResponse.json({
+        error: "Numărul tău a expirat din lista de așteptare în această seară. Te rugăm să revii mâine sau să contactezi personalul restaurantului.",
+        blocked: true,
+      }, { status: 409 });
+    }
+
     const publicToken = crypto.randomUUID();
     const now = new Date();
 

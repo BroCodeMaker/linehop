@@ -1,10 +1,15 @@
 import prisma from './prisma'
 
 export async function getQueue(restaurantId: string) {
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000)
   return prisma.waitlistEntry.findMany({
     where: {
       restaurantId,
-      status: { in: ['WAITING', 'CALLED', 'CONFIRMED'] },
+      OR: [
+        { status: { in: ['WAITING', 'CALLED', 'CONFIRMED'] } },
+        // Keep EXPIRED visible for 5 min so staff can see who timed out
+        { status: 'EXPIRED', expiredAt: { gte: fiveMinAgo } },
+      ],
     },
     orderBy: { createdAt: 'asc' },
   })

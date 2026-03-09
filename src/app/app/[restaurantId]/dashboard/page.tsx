@@ -251,7 +251,17 @@ export default function DashboardPage() {
                     <td style={s.td}>{entry.partySize}</td>
                     <td style={s.td}><span style={s.phone}>{entry.phoneE164}</span></td>
                     <td style={s.td}>
-                      <span style={s.badge}>{entry.status}</span>
+                      <span style={{
+                        ...s.badge,
+                        ...(entry.status === "EXPIRED" ? { background: "#fee2e2", color: "#991b1b", padding: "3px 8px" } : {}),
+                      }}>
+                        {entry.status === "EXPIRED" ? "⌛ TIMEOUT" : entry.status}
+                      </span>
+                      {entry.status === "EXPIRED" && (
+                        <div style={{ fontSize: 10, color: "#ef4444", marginTop: 2, fontWeight: 600 }}>
+                          Nu a ajuns la timp
+                        </div>
+                      )}
                       {entry.status === "CALLED" && entry.confirmDeadlineAt && (
                         <div style={{ marginTop: 4 }}>
                           <CountdownTimer deadline={entry.confirmDeadlineAt} totalSec={120} />
