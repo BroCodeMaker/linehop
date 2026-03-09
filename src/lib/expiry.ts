@@ -1,6 +1,7 @@
 import prisma from './prisma'
 import { callNext } from './queue'
 import { sendWhatsAppMessage } from './notify'
+import { emitUpdate } from './emitter'
 
 export async function expireEntries(): Promise<number> {
   const now = new Date()
@@ -16,38 +17,36 @@ export async function expireEntries(): Promise<number> {
     select: { id: true, restaurantId: true, phoneE164: true, guestName: true },
   })
 
-  // Expire CALLED entries
+  // Expire CALLED → NO_SHOW_CONFIRM
   const calledResult = await prisma.waitlistEntry.updateMany({
     where: { status: 'CALLED', confirmDeadlineAt: { lt: now } },
-    data: { status: 'EXPIRED', expiredAt: now },
+    data: { status: 'NO_SHOW_CONFIRM', expiredAt: now, expiredReason: 'NO_SHOW_CONFIRM' },
   })
 
-  // Expire CONFIRMED entries
+  // Expire CONFIRMED → NO_SHOW_ARRIVAL
   const confirmedResult = await prisma.waitlistEntry.updateMany({
     where: { status: 'CONFIRMED', arrivalDeadlineAt: { lt: now } },
-    data: { status: 'EXPIRED', expiredAt: now },
+    data: { status: 'NO_SHOW_ARRIVAL', expiredAt: now, expiredReason: 'NO_SHOW_ARRIVAL' },
   })
 
   const totalExpired = calledResult.count + confirmedResult.count
 
   if (totalExpired === 0) return 0
 
-  // Send WhatsApp notification to each expired client
+  // Send WhatsApp notification to each expired client (Feature 10)
   for (const entry of calledExpiring) {
-    const name = entry.guestName ? `, ${entry.guestName}` : ''
     await sendWhatsAppMessage(
       entry.id,
       entry.phoneE164,
-      `⌛ Ne pare rău${name}, timpul de confirmare a expirat. Locul tău în coadă a fost anulat.\n\nDacă dorești, poți reveni mâine. Îți mulțumim!`
+      `Din păcate nu ați confirmat la timp. Locul dumneavoastră a fost dat mai departe.`
     ).catch(() => { /* don't block on notify failure */ })
   }
 
   for (const entry of confirmedExpiring) {
-    const name = entry.guestName ? `, ${entry.guestName}` : ''
     await sendWhatsAppMessage(
       entry.id,
       entry.phoneE164,
-      `⌛ Ne pare rău${name}, cele 5 minute de sosire au expirat. Locul tău a fost anulat.\n\nContactează personalul restaurantului dacă ai ajuns. Îți mulțumim!`
+      `Din păcate nu v-ați prezentat la timp. Locul dumneavoastră a fost dat mai departe.`
     ).catch(() => { /* don't block on notify failure */ })
   }
 
@@ -65,6 +64,7 @@ export async function expireEntries(): Promise<number> {
     if (restaurant?.status === 'FULL') {
       await callNext(restaurantId)
     }
+    emitUpdate(restaurantId)
   }
 
   return totalExpired

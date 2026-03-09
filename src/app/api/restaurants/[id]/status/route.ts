@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { closeRestaurant } from "@/lib/queue";
+import { emitUpdate } from "@/lib/emitter";
 
-const VALID = ["OPEN", "FULL", "CLOSED"];
+const VALID = ["OPEN", "FULL", "PAUSED", "CLOSED"];
 
 export async function PUT(
   req: NextRequest,
@@ -18,6 +19,7 @@ export async function PUT(
 
     if (status === "CLOSED") {
       await closeRestaurant(id);
+      emitUpdate(id);
       return NextResponse.json({ ok: true, status: "CLOSED" });
     }
 
@@ -26,6 +28,8 @@ export async function PUT(
       data: { status },
       select: { id: true, status: true },
     });
+
+    emitUpdate(id);
 
     return NextResponse.json({ ok: true, status: restaurant.status });
   } catch (err) {

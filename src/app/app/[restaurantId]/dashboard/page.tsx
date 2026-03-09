@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 type Entry = {
@@ -14,25 +14,70 @@ type Entry = {
   confirmedAt?: string;
   confirmDeadlineAt?: string;
   arrivalDeadlineAt?: string;
+  expiredAt?: string;
+  callAgainCount?: number;
 };
 
-type RestStatus = "OPEN" | "FULL" | "CLOSED";
+type RestStatus = "OPEN" | "FULL" | "PAUSED" | "CLOSED";
 
-const STATUS_COLORS: Record<string, string> = {
-  WAITING:   "#fef3c7",
-  CALLED:    "#fed7aa",
-  CONFIRMED: "#dcfce7",
-  SEATED:    "#dbeafe",
-  SKIPPED:   "#f3f4f6",
-  EXPIRED:   "#fee2e2",
-  CANCELED:  "#f3f4f6",
+type Stats = {
+  waitingNow: number;
+  avgWaitMinutes: number | null;
+  seatedTonight: number;
+  confirmRate: number | null;
 };
+
+const FOOD_BG = `radial-gradient(ellipse at 5% 0%, rgba(251,146,60,0.12) 0%, transparent 40%),
+  radial-gradient(ellipse at 95% 100%, rgba(234,179,8,0.08) 0%, transparent 40%), #fdf6ee`;
+
+// Row background colors per status
+function rowBg(status: string): string {
+  switch (status) {
+    case "CALLED":         return "#fff7ed"; // orange tint
+    case "CONFIRMED":      return "#f0fdf4"; // green tint
+    case "WAITING":        return "#fff";
+    case "NO_SHOW_CONFIRM":return "#fee2e2";
+    case "NO_SHOW_ARRIVAL":return "#fff7ed";
+    default:               return "#f9fafb";
+  }
+}
+
+// Row left border color per status
+function rowBorder(status: string): string {
+  switch (status) {
+    case "CALLED":          return "4px solid #fb923c";
+    case "CONFIRMED":       return "4px solid #4ade80";
+    case "WAITING":         return "4px solid #e5e7eb";
+    case "NO_SHOW_CONFIRM": return "4px solid #f87171";
+    case "NO_SHOW_ARRIVAL": return "4px solid #fdba74";
+    default:                return "4px solid #e5e7eb";
+  }
+}
 
 function timeAgo(date: string) {
   const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
   if (mins < 1) return "acum";
   if (mins < 60) return `${mins}m`;
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+}
+
+function useNow(intervalMs = 60000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(t);
+  }, [intervalMs]);
+  return now;
+}
+
+function WaitingTime({ createdAt }: { createdAt: string }) {
+  const now = useNow(60000);
+  const ms = now - new Date(createdAt).getTime();
+  const mins = Math.floor(ms / 60000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  const label = h > 0 ? `${h}h ${m}m` : `${m}m`;
+  return <span style={{ fontSize: 11, color: "#9ca3af" }}>⏱ {label}</span>;
 }
 
 function CountdownTimer({ deadline, totalSec }: { deadline: string; totalSec: number }) {
@@ -43,18 +88,33 @@ function CountdownTimer({ deadline, totalSec }: { deadline: string; totalSec: nu
     const t = setInterval(update, 1000);
     return () => clearInterval(t);
   }, [deadline]);
-  const m = Math.floor(secs / 60), s = secs % 60;
-  const pct = secs / totalSec;
-  const color = pct > 0.5 ? "#16a34a" : pct > 0.2 ? "#ea580c" : "#dc2626";
+  const m = Math.floor(secs / 60), sc = secs % 60;
+  const isLast60 = secs <= 60;
   return (
-    <span style={{ fontWeight: 700, color, fontVariantNumeric: "tabular-nums", fontSize: 13 }}>
-      {m}:{s.toString().padStart(2, "0")}
+    <span style={{
+      fontWeight: 700,
+      color: isLast60 ? "#dc2626" : "#374151",
+      fontVariantNumeric: "tabular-nums",
+      fontSize: 13,
+      animation: isLast60 ? "pulse 1s ease-in-out infinite" : undefined,
+    }}>
+      {m}:{sc.toString().padStart(2, "0")}
     </span>
   );
 }
 
-const FOOD_BG = `radial-gradient(ellipse at 5% 0%, rgba(251,146,60,0.12) 0%, transparent 40%),
-  radial-gradient(ellipse at 95% 100%, rgba(234,179,8,0.08) 0%, transparent 40%), #fdf6ee`;
+function BufferTimer({ expiredAt }: { expiredAt: string }) {
+  const [secs, setSecs] = useState(0);
+  useEffect(() => {
+    const expiry = new Date(expiredAt).getTime() + 10 * 60 * 1000;
+    const update = () => setSecs(Math.max(0, Math.floor((expiry - Date.now()) / 1000)));
+    update();
+    const t = setInterval(update, 1000);
+    return () => clearInterval(t);
+  }, [expiredAt]);
+  const m = Math.floor(secs / 60), sc = secs % 60;
+  return <span style={{ fontSize: 11, color: "#9ca3af" }}>ascuns în {m}:{sc.toString().padStart(2, "0")}</span>;
+}
 
 export default function DashboardPage() {
   const { restaurantId } = useParams<{ restaurantId: string }>();
@@ -62,9 +122,16 @@ export default function DashboardPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [restStatus, setRestStatus] = useState<RestStatus>("OPEN");
+  const [stats, setStats] = useState<Stats | null>(null);
   const [callingNext, setCallingNext] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "ok" | "info" } | null>(null);
   const [changingStatus, setChangingStatus] = useState(false);
+  const [sseConnected, setSseConnected] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [manualForm, setManualForm] = useState({ guestName: "", partySize: 2, phoneE164: "" });
+  const [manualSubmitting, setManualSubmitting] = useState(false);
+  const [showWalkIn, setShowWalkIn] = useState(false);
+  const sseRef = useRef<EventSource | null>(null);
 
   const fetchQueue = useCallback(async () => {
     try {
@@ -86,12 +153,51 @@ export default function DashboardPage() {
     } catch { /* ignore */ }
   }, [restaurantId]);
 
-  useEffect(() => {
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/restaurants/${restaurantId}/stats`);
+      if (res.ok) {
+        const d = await res.json();
+        setStats(d);
+      }
+    } catch { /* ignore */ }
+  }, [restaurantId]);
+
+  const refreshAll = useCallback(() => {
     fetchQueue();
     fetchRestStatus();
-    const t = setInterval(() => { fetchQueue(); fetchRestStatus(); }, 10000);
-    return () => clearInterval(t);
-  }, [fetchQueue, fetchRestStatus]);
+    fetchStats();
+  }, [fetchQueue, fetchRestStatus, fetchStats]);
+
+  // SSE setup
+  useEffect(() => {
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+
+    const connect = () => {
+      const es = new EventSource(`/api/restaurants/${restaurantId}/stream`);
+      sseRef.current = es;
+      es.addEventListener('connected', () => setSseConnected(true));
+      es.addEventListener('update', () => refreshAll());
+      es.onerror = () => {
+        setSseConnected(false);
+        es.close();
+        reconnectTimer = setTimeout(connect, 3000);
+      };
+    };
+
+    connect();
+    const poll = setInterval(refreshAll, 15000);
+
+    return () => {
+      sseRef.current?.close();
+      clearTimeout(reconnectTimer);
+      clearInterval(poll);
+    };
+  }, [restaurantId, refreshAll]);
+
+  useEffect(() => {
+    refreshAll();
+  }, [refreshAll]);
 
   async function handleSetStatus(newStatus: RestStatus) {
     if (newStatus === restStatus) return;
@@ -105,10 +211,14 @@ export default function DashboardPage() {
       });
       if (res.ok) {
         setRestStatus(newStatus);
-        await fetchQueue();
-        if (newStatus === "CLOSED") setMessage({ text: "Restaurantul a fost închis. Clienții au fost notificați.", type: "info" });
-        if (newStatus === "FULL") setMessage({ text: "Modul Waitlist activat. Clienții se pot înscrie în coadă.", type: "ok" });
-        if (newStatus === "OPEN") setMessage({ text: "Modul normal activat. Clienții intră direct.", type: "info" });
+        await refreshAll();
+        const msgs: Record<string, string> = {
+          CLOSED: "Restaurantul a fost închis. Clienții au fost notificați.",
+          FULL: "Modul Waitlist activat. Clienții se pot înscrie în coadă.",
+          OPEN: "Modul normal activat. Clienții intră direct.",
+          PAUSED: "Waitlist-ul este în pauză. Coada existentă rămâne intactă.",
+        };
+        setMessage({ text: msgs[newStatus] || "", type: newStatus === "FULL" ? "ok" : "info" });
       }
     } finally {
       setChangingStatus(false);
@@ -127,15 +237,15 @@ export default function DashboardPage() {
       } else {
         setMessage({ text: "ℹ️ Nu mai sunt clienți în așteptare", type: "info" });
       }
-      await fetchQueue();
+      await refreshAll();
     } finally {
       setCallingNext(false);
     }
   }
 
-  async function handleAction(entryId: string, action: "seat" | "skip") {
+  async function handleAction(entryId: string, action: string) {
     await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/${action}`, { method: "POST" });
-    await fetchQueue();
+    await refreshAll();
   }
 
   async function handleLogout() {
@@ -143,18 +253,72 @@ export default function DashboardPage() {
     router.push("/app/login");
   }
 
+  async function handleManualAdd(e: React.FormEvent) {
+    e.preventDefault();
+    setManualSubmitting(true);
+    try {
+      const res = await fetch(`/api/restaurants/${restaurantId}/entries/add-manual`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guestName: manualForm.guestName,
+          partySize: manualForm.partySize,
+          phoneE164: manualForm.phoneE164 || undefined,
+        }),
+      });
+      if (res.ok) {
+        setShowManualForm(false);
+        setManualForm({ guestName: "", partySize: 2, phoneE164: "" });
+        await refreshAll();
+        setMessage({ text: "✅ Grup adăugat manual", type: "ok" });
+        setTimeout(() => setMessage(null), 3000);
+      }
+    } finally {
+      setManualSubmitting(false);
+    }
+  }
+
+  async function handleWalkIn(partySize: number) {
+    setShowWalkIn(false);
+    await fetch(`/api/restaurants/${restaurantId}/entries/walk-in`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ partySize }),
+    });
+    await refreshAll();
+    setMessage({ text: `✅ Walk-in ${partySize} pers. înregistrat`, type: "ok" });
+    setTimeout(() => setMessage(null), 3000);
+  }
+
   const waiting = entries.filter(e => e.status === "WAITING").length;
   const called = entries.filter(e => e.status === "CALLED").length;
   const confirmed = entries.filter(e => e.status === "CONFIRMED").length;
 
+  const statusCfg: Record<string, { label: string; active: string; icon: string }> = {
+    OPEN:   { label: "Deschis",         active: "#16a34a", icon: "🟢" },
+    FULL:   { label: "Plin / Waitlist", active: "#ea580c", icon: "🔴" },
+    PAUSED: { label: "Pauză",           active: "#d97706", icon: "⏸️" },
+    CLOSED: { label: "Închis",          active: "#6b7280", icon: "🌙" },
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: FOOD_BG, fontFamily: "system-ui, sans-serif" }}>
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
+
       {/* Header */}
       <div style={s.header}>
         <div style={s.headerLeft}>
           <span style={s.logo}>🍽️ Queue Dashboard</span>
         </div>
         <div style={s.headerRight}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: sseConnected ? "#16a34a" : "#ef4444" }}>
+            {sseConnected ? "🟢 Live" : "🔴 Reconnecting..."}
+          </span>
           <button onClick={handleLogout} style={s.logoutBtn}>Logout</button>
         </div>
       </div>
@@ -164,13 +328,8 @@ export default function DashboardPage() {
         <div style={s.statusCard}>
           <div style={s.statusLabel}>Status Restaurant</div>
           <div style={s.statusRow}>
-            {(["OPEN", "FULL", "CLOSED"] as RestStatus[]).map((st) => {
-              const cfg: Record<RestStatus, { label: string; active: string; icon: string }> = {
-                OPEN:   { label: "Deschis", active: "#16a34a", icon: "🟢" },
-                FULL:   { label: "Plin / Waitlist", active: "#ea580c", icon: "🔴" },
-                CLOSED: { label: "Închis", active: "#6b7280", icon: "🌙" },
-              };
-              const c = cfg[st];
+            {(["OPEN", "FULL", "PAUSED", "CLOSED"] as RestStatus[]).map((st) => {
+              const c = statusCfg[st];
               const isActive = restStatus === st;
               return (
                 <button
@@ -193,19 +352,35 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats Bar (4 live metrics) */}
         <div style={s.statsRow}>
           <div style={{ ...s.statBox, background: "#fef3c7", color: "#92400e" }}>
-            <span style={s.statNum}>{waiting}</span>
-            <span style={s.statLbl}>⏳ așteptare</span>
+            <span style={s.statLbl}>⏳ Waiting now</span>
+            <span style={s.statNum}>{stats?.waitingNow ?? waiting}</span>
           </div>
           <div style={{ ...s.statBox, background: "#fed7aa", color: "#9a3412" }}>
-            <span style={s.statNum}>{called}</span>
-            <span style={s.statLbl}>📲 chemat</span>
+            <span style={s.statLbl}>⏱ Timp mediu</span>
+            <span style={s.statNum}>
+              {stats?.avgWaitMinutes != null ? `${stats.avgWaitMinutes}m` : "—"}
+            </span>
           </div>
           <div style={{ ...s.statBox, background: "#dcfce7", color: "#166534" }}>
+            <span style={s.statLbl}>🪑 Seated tonight</span>
+            <span style={s.statNum}>{stats?.seatedTonight ?? 0}</span>
+          </div>
+          <div style={{ ...s.statBox, background: "#ede9fe", color: "#5b21b6" }}>
+            <span style={s.statLbl}>✅ Confirm rate</span>
+            <span style={s.statNum}>
+              {stats?.confirmRate != null ? `${stats.confirmRate}%` : "—"}
+            </span>
+          </div>
+          <div style={{ ...s.statBox, background: "#fed7aa", color: "#9a3412" }}>
+            <span style={s.statLbl}>📲 Chemat</span>
+            <span style={s.statNum}>{called}</span>
+          </div>
+          <div style={{ ...s.statBox, background: "#dcfce7", color: "#166534" }}>
+            <span style={s.statLbl}>✅ Confirmat</span>
             <span style={s.statNum}>{confirmed}</span>
-            <span style={s.statLbl}>✅ confirmat</span>
           </div>
         </div>
 
@@ -216,84 +391,166 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Call Next Button */}
-        <button
-          onClick={handleCallNext}
-          disabled={callingNext || waiting === 0 || restStatus === "CLOSED"}
-          style={{ ...s.callBtn, opacity: (waiting === 0 || restStatus === "CLOSED") ? 0.4 : 1 }}
-        >
-          {callingNext ? "Se cheamă..." : "📣 CHEAMĂ URMĂTORUL"}
-        </button>
+        {/* Action Buttons Row */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" as const }}>
+          <button
+            onClick={handleCallNext}
+            disabled={callingNext || waiting === 0 || restStatus === "CLOSED"}
+            style={{ ...s.callBtn, flex: 2, marginBottom: 0, minWidth: 160, opacity: (waiting === 0 || restStatus === "CLOSED") ? 0.4 : 1 }}
+          >
+            {callingNext ? "Se cheamă..." : "📣 CHEAMĂ URMĂTORUL"}
+          </button>
+          <button onClick={() => setShowManualForm(v => !v)} style={{ ...s.toolBtn, flex: 1, minWidth: 130 }}>
+            ➕ Adaugă manual
+          </button>
+          <button onClick={() => setShowWalkIn(v => !v)} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#e0e7ff", color: "#3730a3", border: "2px solid #a5b4fc" }}>
+            🚶 Walk-in
+          </button>
+        </div>
+
+        {/* Manual Add Form */}
+        {showManualForm && (
+          <div style={s.manualForm}>
+            <form onSubmit={handleManualAdd} style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "flex-end" }}>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Nume *</label>
+                <input value={manualForm.guestName} onChange={e => setManualForm(f => ({ ...f, guestName: e.target.value }))} placeholder="Nume grup" required style={s.formInput} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Persoane *</label>
+                <input type="number" min={1} max={20} value={manualForm.partySize} onChange={e => setManualForm(f => ({ ...f, partySize: Number(e.target.value) }))} style={{ ...s.formInput, width: 70 }} required />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Telefon (opțional)</label>
+                <input type="tel" value={manualForm.phoneE164} onChange={e => setManualForm(f => ({ ...f, phoneE164: e.target.value }))} placeholder="07xx xxx xxx" style={s.formInput} />
+              </div>
+              <button type="submit" disabled={manualSubmitting} style={s.submitBtn}>{manualSubmitting ? "..." : "Adaugă"}</button>
+              <button type="button" onClick={() => setShowManualForm(false)} style={s.cancelBtn}>Anulează</button>
+            </form>
+          </div>
+        )}
+
+        {/* Walk-in Popup */}
+        {showWalkIn && (
+          <div style={s.manualForm}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 10 }}>🚶 Walk-in — Selectează numărul de persoane:</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+              {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                <button key={n} onClick={() => handleWalkIn(n)} style={{ padding: "10px 16px", background: "#3730a3", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 16, cursor: "pointer" }}>
+                  {n}
+                </button>
+              ))}
+              <button onClick={() => setShowWalkIn(false)} style={s.cancelBtn}>✕</button>
+            </div>
+          </div>
+        )}
 
         {/* Queue Table */}
         {loading ? (
           <p style={s.muted}>Se încarcă coada...</p>
         ) : entries.length === 0 ? (
-          <div style={s.emptyState}>
-            <div style={{ fontSize: 48 }}>🎉</div>
-            <p>Coada este goală</p>
-          </div>
+          <div style={s.emptyState}><div style={{ fontSize: 48 }}>🎉</div><p>Coada este goală</p></div>
         ) : (
           <div style={s.tableWrap}>
-            <table style={s.table}>
-              <thead>
-                <tr>
-                  {["#", "Nume", "Pers.", "Telefon", "Status", "Timp", "Acțiuni"].map(h => (
-                    <th key={h} style={s.th}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry, i) => (
-                  <tr key={entry.id} style={{ background: STATUS_COLORS[entry.status] ?? "#fff" }}>
-                    <td style={s.td}>{i + 1}</td>
-                    <td style={s.td}><strong>{entry.guestName ?? "—"}</strong></td>
-                    <td style={s.td}>{entry.partySize}</td>
-                    <td style={s.td}><span style={s.phone}>{entry.phoneE164}</span></td>
-                    <td style={s.td}>
-                      <span style={{
-                        ...s.badge,
-                        ...(entry.status === "EXPIRED" ? { background: "#fee2e2", color: "#991b1b", padding: "3px 8px" } : {}),
-                      }}>
-                        {entry.status === "EXPIRED" ? "⌛ TIMEOUT" : entry.status}
-                      </span>
-                      {entry.status === "EXPIRED" && (
-                        <div style={{ fontSize: 10, color: "#ef4444", marginTop: 2, fontWeight: 600 }}>
-                          Nu a ajuns la timp
-                        </div>
-                      )}
-                      {entry.status === "CALLED" && entry.confirmDeadlineAt && (
+            {entries.map((entry, i) => (
+              <div
+                key={entry.id}
+                style={{
+                  borderLeft: rowBorder(entry.status),
+                  background: rowBg(entry.status),
+                  borderBottom: "1px solid rgba(0,0,0,0.05)",
+                  padding: "12px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  flexWrap: "wrap" as const,
+                }}
+              >
+                {/* Position */}
+                <span style={{ fontSize: 13, color: "#9ca3af", fontWeight: 700, minWidth: 24 }}>#{i + 1}</span>
+
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 120 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>
+                    {entry.guestName ?? "—"} · {entry.partySize} pers.
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 2, alignItems: "center" }}>
+                    <span style={{ fontFamily: "monospace", fontSize: 11, background: "#f3f4f6", padding: "1px 5px", borderRadius: 4 }}>
+                      {entry.phoneE164}
+                    </span>
+                    <WaitingTime createdAt={entry.createdAt} />
+                  </div>
+                </div>
+
+                {/* Status + Countdown */}
+                <div style={{ minWidth: 130, textAlign: "center" as const }}>
+                  {entry.status === "NO_SHOW_CONFIRM" && (
+                    <>
+                      <span style={{ ...s.badge, background: "#fee2e2", color: "#991b1b" }}>⌛ Confirmation Timeout</span>
+                      {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
+                    </>
+                  )}
+                  {entry.status === "NO_SHOW_ARRIVAL" && (
+                    <>
+                      <span style={{ ...s.badge, background: "#ffedd5", color: "#9a3412" }}>⌛ Time to Seat Expired</span>
+                      {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
+                    </>
+                  )}
+                  {entry.status === "CALLED" && (
+                    <>
+                      <span style={{ ...s.badge, background: "#fed7aa", color: "#9a3412" }}>📲 CALLED</span>
+                      {entry.confirmDeadlineAt && (
                         <div style={{ marginTop: 4 }}>
                           <CountdownTimer deadline={entry.confirmDeadlineAt} totalSec={120} />
                         </div>
                       )}
-                      {entry.status === "CONFIRMED" && entry.arrivalDeadlineAt && (
+                    </>
+                  )}
+                  {entry.status === "CONFIRMED" && (
+                    <>
+                      <span style={{ ...s.badge, background: "#bbf7d0", color: "#166534" }}>✅ CONFIRMED</span>
+                      {entry.arrivalDeadlineAt && (
                         <div style={{ marginTop: 4 }}>
                           <CountdownTimer deadline={entry.arrivalDeadlineAt} totalSec={300} />
                         </div>
                       )}
-                    </td>
-                    <td style={s.td}>{timeAgo(entry.createdAt)}</td>
-                    <td style={s.td}>
-                      {["WAITING", "CALLED", "CONFIRMED"].includes(entry.status) && (
-                        <>
-                          <button onClick={() => handleAction(entry.id, "seat")} style={{ ...s.actionBtn, background: "#2563eb" }}>
-                            Seat
-                          </button>
-                          <button onClick={() => handleAction(entry.id, "skip")} style={{ ...s.actionBtn, background: "#9ca3af" }}>
-                            Skip
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </>
+                  )}
+                  {entry.status === "WAITING" && (
+                    <span style={{ ...s.badge }}>⏳ WAITING</span>
+                  )}
+                  {!["NO_SHOW_CONFIRM","NO_SHOW_ARRIVAL","CALLED","CONFIRMED","WAITING"].includes(entry.status) && (
+                    <span style={s.badge}>{entry.status}</span>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const }}>
+                  {entry.status === "WAITING" && (
+                    <button onClick={() => handleAction(entry.id, "call")} style={{ ...s.actionBtn, background: "#ea580c" }}>
+                      📲 Cheamă
+                    </button>
+                  )}
+                  {["WAITING", "CALLED", "CONFIRMED"].includes(entry.status) && (
+                    <>
+                      <button onClick={() => handleAction(entry.id, "seat")} style={{ ...s.actionBtn, background: "#2563eb" }}>Seat</button>
+                      <button onClick={() => handleAction(entry.id, "skip")} style={{ ...s.actionBtn, background: "#9ca3af" }}>Skip</button>
+                    </>
+                  )}
+                  {["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(entry.status) && (entry.callAgainCount ?? 0) < 1 && (
+                    <button onClick={() => handleAction(entry.id, "call-again")} style={{ ...s.actionBtn, background: "#7c3aed" }}>
+                      🔄 Call Again
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        <p style={s.refresh}>Auto-refresh la 10 secunde</p>
+        <p style={s.refresh}>
+          {sseConnected ? "🟢 Live updates active" : "🔴 Reconnecting... (polling la 15s)"}
+        </p>
       </div>
     </div>
   );
@@ -309,21 +566,24 @@ const s: Record<string, React.CSSProperties> = {
   statusCard: { background: "rgba(255,255,255,0.95)", borderRadius: "16px", padding: "16px 20px", marginBottom: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" },
   statusLabel: { fontSize: "12px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: "10px" },
   statusRow: { display: "flex", gap: "8px", flexWrap: "wrap" as const },
-  statusBtn: { padding: "10px 18px", borderRadius: "10px", cursor: "pointer", fontSize: "14px", transition: "all 0.2s", flex: 1, minWidth: "120px" },
-  statsRow: { display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap" as const },
-  statBox: { flex: 1, minWidth: "80px", borderRadius: "12px", padding: "12px 16px", display: "flex", flexDirection: "column" as const, alignItems: "center" },
-  statNum: { fontSize: "32px", fontWeight: 800, lineHeight: 1 },
-  statLbl: { fontSize: "12px", fontWeight: 600, marginTop: "4px" },
+  statusBtn: { padding: "10px 18px", borderRadius: "10px", cursor: "pointer", fontSize: "14px", transition: "all 0.2s", flex: 1, minWidth: "100px" },
+  statsRow: { display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" as const },
+  statBox: { flex: 1, minWidth: "80px", borderRadius: "12px", padding: "10px 12px", display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 4 },
+  statNum: { fontSize: "28px", fontWeight: 800, lineHeight: 1 },
+  statLbl: { fontSize: "11px", fontWeight: 600 },
   msgBox: { border: "1.5px solid", borderRadius: "10px", padding: "10px 16px", marginBottom: "12px", fontSize: "14px", fontWeight: 600 },
-  callBtn: { display: "block", width: "100%", padding: "16px", background: "linear-gradient(135deg, #16a34a, #15803d)", color: "#fff", border: "none", borderRadius: "12px", fontSize: "17px", fontWeight: 700, cursor: "pointer", marginBottom: "16px", boxShadow: "0 4px 16px rgba(22,163,74,0.25)" },
+  callBtn: { padding: "16px", background: "linear-gradient(135deg, #16a34a, #15803d)", color: "#fff", border: "none", borderRadius: "12px", fontSize: "16px", fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 16px rgba(22,163,74,0.25)" },
+  toolBtn: { padding: "14px 16px", background: "#fff", border: "2px solid #e5e7eb", borderRadius: "12px", fontSize: "13px", fontWeight: 700, cursor: "pointer", color: "#374151" },
+  manualForm: { background: "rgba(255,255,255,0.95)", borderRadius: "12px", padding: "16px", marginBottom: "16px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
+  formGroup: { display: "flex", flexDirection: "column" as const, gap: 4 },
+  formLabel: { fontSize: "12px", fontWeight: 600, color: "#6b7280" },
+  formInput: { padding: "8px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "14px", outline: "none" },
+  submitBtn: { padding: "8px 18px", background: "#16a34a", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" },
+  cancelBtn: { padding: "8px 14px", background: "transparent", color: "#9ca3af", border: "1.5px solid #e5e7eb", borderRadius: "8px", cursor: "pointer", fontSize: "14px" },
   emptyState: { textAlign: "center" as const, padding: "48px 0", color: "#9ca3af", fontSize: "16px" },
-  tableWrap: { overflowX: "auto" as const, background: "rgba(255,255,255,0.95)", borderRadius: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflow: "hidden" },
-  table: { width: "100%", borderCollapse: "collapse" as const, fontSize: "14px" },
-  th: { textAlign: "left" as const, padding: "12px 14px", borderBottom: "2px solid #f0e8dc", fontWeight: 700, color: "#374151", background: "rgba(253,246,238,0.8)", fontSize: "13px" },
-  td: { padding: "10px 14px", borderBottom: "1px solid rgba(0,0,0,0.04)", verticalAlign: "middle" as const },
-  phone: { fontFamily: "monospace", fontSize: "12px", background: "#f3f4f6", padding: "2px 6px", borderRadius: "4px" },
+  tableWrap: { background: "rgba(255,255,255,0.95)", borderRadius: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflow: "hidden" },
   badge: { fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "4px", background: "rgba(0,0,0,0.06)" },
-  actionBtn: { padding: "5px 12px", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "#fff", marginRight: "6px" },
+  actionBtn: { padding: "5px 12px", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "#fff" },
   muted: { color: "#9ca3af", padding: "32px 0", textAlign: "center" as const },
   refresh: { fontSize: "11px", color: "#d1d5db", textAlign: "center" as const, marginTop: "24px" },
 };

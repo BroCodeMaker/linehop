@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { callNext } from "@/lib/queue";
+import { emitUpdate } from "@/lib/emitter";
 
 export async function POST(
   _request: Request,
@@ -35,6 +36,7 @@ export async function POST(
 
     // Automatically call next after skip
     await callNext(id);
+    emitUpdate(id);
 
     return NextResponse.json({ ok: true, entry: updated, message: "Next guest called" });
   } catch (err) {

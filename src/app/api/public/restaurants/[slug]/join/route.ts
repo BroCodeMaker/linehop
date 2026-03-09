@@ -3,6 +3,7 @@ import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { normalizePhone } from "@/lib/phone";
 import { getPositionInQueue } from "@/lib/status";
+import { emitUpdate } from "@/lib/emitter";
 
 const JoinSchema = z.object({
   partySize: z.number().int().min(1).max(20),
@@ -36,18 +37,16 @@ export async function POST(
 
     const phoneE164 = normalizePhone(phone);
 
-    // Block phone if it expired at this restaurant today (last 16h = same evening)
-    const recentExpiry = await prisma.waitlistEntry.findFirst({
+    // Feature 8: Block same phone with ANY status (already in waitlist or participated)
+    const existing = await prisma.waitlistEntry.findFirst({
       where: {
         restaurantId: restaurant.id,
         phoneE164,
-        status: 'EXPIRED',
-        expiredAt: { gte: new Date(Date.now() - 16 * 60 * 60 * 1000) },
       },
     });
-    if (recentExpiry) {
+    if (existing) {
       return NextResponse.json({
-        error: "Numărul tău a expirat din lista de așteptare în această seară. Te rugăm să revii mâine sau să contactezi personalul restaurantului.",
+        error: "Acest număr de telefon este deja înregistrat sau a participat la lista de așteptare.",
         blocked: true,
       }, { status: 409 });
     }
@@ -71,6 +70,8 @@ export async function POST(
     const queueLength = await prisma.waitlistEntry.count({
       where: { restaurantId: restaurant.id, status: "WAITING" },
     });
+
+    emitUpdate(restaurant.id);
 
     return NextResponse.json({
       ok: true,

@@ -45,9 +45,11 @@ model WaitlistEntry {
   seatedAt          DateTime?
   skippedAt         DateTime?
   expiredAt         DateTime?
+  expiredReason     String?
   canceledAt        DateTime?
   confirmDeadlineAt DateTime?
   arrivalDeadlineAt DateTime?
+  callAgainCount    Int       @default(0)
 
   restaurant        Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   messageEvents     MessageEvent[]

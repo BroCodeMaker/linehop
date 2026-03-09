@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { callNext } from "@/lib/queue";
-import { sendWhatsAppMessage } from "@/lib/notify";
+import { emitUpdate } from "@/lib/emitter";
 
 export async function POST(
   _request: Request,
@@ -14,11 +14,7 @@ export async function POST(
       return NextResponse.json({ ok: false, message: "No WAITING entries" }, { status: 200 });
     }
 
-    await sendWhatsAppMessage(
-      entry.id,
-      entry.phoneE164,
-      `Your table is ready! Please confirm within 2 minutes by replying CONFIRM. 🍽️`
-    );
+    emitUpdate(id);
 
     return NextResponse.json({ ok: true, entry });
   } catch (err) {

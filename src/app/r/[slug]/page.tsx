@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 
 type RestaurantInfo = {
   name: string;
-  status: "OPEN" | "FULL" | "CLOSED";
+  status: "OPEN" | "FULL" | "CLOSED" | "PAUSED";
   queueLength: number;
   estimatedWaitMinutes: number;
 };
@@ -55,7 +55,7 @@ export default function JoinPage() {
       const data = await res.json();
       if (!res.ok) {
         if (data.blocked) {
-          setError("⌛ Numărul tău a expirat din lista de așteptare în această seară. Te rugăm să revii mâine sau să contactezi personalul restaurantului.");
+          setError("Acest număr de telefon este deja înregistrat sau a participat la lista de așteptare.");
         } else {
           setError(data.error || "Something went wrong");
         }
@@ -93,19 +93,30 @@ export default function JoinPage() {
     </div>
   );
 
+  // Feature 4: PAUSED status
+  if (info.status === "PAUSED") return (
+    <div style={{ ...s.page, background: FOOD_BG }}>
+      <FoodDecorations />
+      <div style={s.card}>
+        <div style={s.headerEmoji}>⏸️</div>
+        <h1 style={s.title}>{info.name}</h1>
+        <div style={{ ...s.banner, background: "#fef3c7", color: "#92400e" }}>Lista de așteptare este temporar în pauză</div>
+        <p style={s.muted}>Vă rugăm să reveniți în câteva minute sau să contactați personalul restaurantului.</p>
+      </div>
+    </div>
+  );
+
+  // Feature 5: OPEN message
   if (info.status === "OPEN") return (
     <div style={{ ...s.page, background: FOOD_BG }}>
       <FoodDecorations />
       <div style={s.card}>
         <div style={s.headerEmoji}>🍽️</div>
         <h1 style={s.title}>{info.name}</h1>
-        <div style={{ ...s.banner, background: "#dcfce7", color: "#166534" }}>✅ Avem mese disponibile!</div>
+        <div style={{ ...s.banner, background: "#dcfce7", color: "#166534" }}>✅ Mese disponibile</div>
         <p style={{ fontSize: 15, color: "#374151", textAlign: "center", margin: "16px 0" }}>
-          Nu este nicio așteptare în acest moment.
+          În acest moment nu există listă de așteptare. Vă poftim înăuntru pentru așezarea la masă.
         </p>
-        <div style={s.infoBox}>
-          🎉 <strong>Intrați direct</strong> — veți fi cazați imediat!
-        </div>
       </div>
     </div>
   );
@@ -196,7 +207,6 @@ const s: Record<string, React.CSSProperties> = {
   label: { fontSize: "13px", fontWeight: 600, color: "#555", marginTop: "8px" },
   input: { padding: "12px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "16px", outline: "none", background: "#fafafa", marginBottom: "2px" },
   btn: { marginTop: "12px", padding: "15px", background: "linear-gradient(135deg, #ea580c, #dc2626)", color: "#fff", border: "none", borderRadius: "12px", fontSize: "16px", fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(234,88,12,0.3)" },
-  infoBox: { background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: "10px", padding: "14px 16px", fontSize: "15px", color: "#166534", textAlign: "center" as const },
   muted: { fontSize: "13px", color: "#9ca3af", textAlign: "center" as const, marginTop: "12px" },
   error: { color: "#dc2626", fontSize: "13px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "6px", padding: "8px 12px" },
 };

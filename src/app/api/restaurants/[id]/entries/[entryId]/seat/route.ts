@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { emitUpdate } from "@/lib/emitter";
 
 export async function POST(
   _request: Request,
@@ -31,6 +32,7 @@ export async function POST(
     });
 
     console.log(`[seat] Entry ${entryId} seated (was ${entry.status})`);
+    emitUpdate(id);
 
     return NextResponse.json({ ok: true, entry: updated });
   } catch (err) {
