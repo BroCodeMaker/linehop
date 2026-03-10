@@ -350,6 +350,7 @@ export default function DashboardPage() {
           <span style={{ fontSize: 12, fontWeight: 700, color: sseConnected ? "#16a34a" : "#ef4444" }}>
             {sseConnected ? "🟢 Live" : "🔴 Reconnecting..."}
           </span>
+          <button onClick={() => router.push(`/app/${restaurantId}/settings`)} style={s.logoutBtn}>⚙️ Settings</button>
           <button onClick={handleLogout} style={s.logoutBtn}>Logout</button>
         </div>
       </div>

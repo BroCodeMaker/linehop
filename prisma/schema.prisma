@@ -8,14 +8,31 @@ datasource db {
 }
 
 model Restaurant {
-  id        String          @id @default(uuid())
+  id        String              @id @default(uuid())
   name      String
-  slug      String          @unique
-  timezone  String          @default("Europe/Bucharest")
-  status    String          @default("OPEN")
-  createdAt DateTime        @default(now())
+  slug      String              @unique
+  timezone  String              @default("Europe/Bucharest")
+  status    String              @default("OPEN")
+  createdAt DateTime            @default(now())
   users     RestaurantUser[]
   entries   WaitlistEntry[]
+  settings  RestaurantSettings?
+}
+
+model RestaurantSettings {
+  id                    String     @id @default(uuid())
+  restaurantId          String     @unique
+  confirmTimerSec       Int        @default(120)
+  arrivalTimerSec       Int        @default(300)
+  bufferVisibilitySec   Int        @default(600)
+  maxCallAgain          Int        @default(1)
+  maxPartySize          Int        @default(10)
+  maxQueueSize          Int        @default(50)
+  msgWhatsappCall       String     @default("Vă rugăm să vă prezentați la intrare în 2 minute.")
+  msgWhatsappExpire     String     @default("Din păcate locul dumneavoastră a expirat.")
+  msgWhatsappCallAgain  String     @default("Vă mai acordăm o șansă, vă rugăm să vă prezentați.")
+  updatedAt             DateTime   @updatedAt
+  restaurant            Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }
 
 model RestaurantUser {
@@ -32,14 +49,14 @@ model RestaurantUser {
 }
 
 model WaitlistEntry {
-  id                String          @id @default(uuid())
+  id                String         @id @default(uuid())
   restaurantId      String
-  publicToken       String          @unique
+  publicToken       String         @unique
   partySize         Int
   phoneE164         String
   guestName         String?
   status            String
-  createdAt         DateTime        @default(now())
+  createdAt         DateTime       @default(now())
   calledAt          DateTime?
   confirmedAt       DateTime?
   seatedAt          DateTime?
@@ -49,26 +66,24 @@ model WaitlistEntry {
   canceledAt        DateTime?
   confirmDeadlineAt DateTime?
   arrivalDeadlineAt DateTime?
-  callAgainCount    Int       @default(0)
-
-  restaurant        Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  callAgainCount    Int            @default(0)
   messageEvents     MessageEvent[]
+  restaurant        Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@index([restaurantId, status, createdAt])
 }
 
 model MessageEvent {
-  id              String          @id @default(uuid())
-  entryId         String
-  direction       String          @default("outbound")
-  provider        String          @default("mock")
-  phoneE164       String
-  body            String
-  status          String          @default("sent")
-  externalId      String?
-  createdAt       DateTime        @default(now())
-
-  entry           WaitlistEntry   @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  id         String        @id @default(uuid())
+  entryId    String
+  direction  String        @default("outbound")
+  provider   String        @default("mock")
+  phoneE164  String
+  body       String
+  status     String        @default("sent")
+  externalId String?
+  createdAt  DateTime      @default(now())
+  entry      WaitlistEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   @@index([entryId, direction, createdAt])
 }
