@@ -131,6 +131,9 @@ export default function DashboardPage() {
   const [manualForm, setManualForm] = useState({ guestName: "", partySize: 2, phoneE164: "" });
   const [manualSubmitting, setManualSubmitting] = useState(false);
   const [showWalkIn, setShowWalkIn] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ guestName: string; partySize: number; phoneE164: string }>({ guestName: "", partySize: 2, phoneE164: "" });
+  const [editSubmitting, setEditSubmitting] = useState(false);
   const sseRef = useRef<EventSource | null>(null);
 
   const fetchQueue = useCallback(async () => {
@@ -288,6 +291,34 @@ export default function DashboardPage() {
     await refreshAll();
     setMessage({ text: `✅ Walk-in ${partySize} pers. înregistrat`, type: "ok" });
     setTimeout(() => setMessage(null), 3000);
+  }
+
+  function startEdit(entry: Entry) {
+    setEditingId(entry.id);
+    setEditForm({
+      guestName: entry.guestName ?? "",
+      partySize: entry.partySize,
+      phoneE164: entry.phoneE164,
+    });
+  }
+
+  async function handleEditSave(entryId: string) {
+    setEditSubmitting(true);
+    try {
+      const res = await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/edit`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+      if (res.ok) {
+        setEditingId(null);
+        await refreshAll();
+        setMessage({ text: "✅ Entry actualizat", type: "ok" });
+        setTimeout(() => setMessage(null), 3000);
+      }
+    } finally {
+      setEditSubmitting(false);
+    }
   }
 
   const waiting = entries.filter(e => e.status === "WAITING").length;
@@ -542,7 +573,30 @@ export default function DashboardPage() {
                       🔄 Call Again
                     </button>
                   )}
+                  {["WAITING", "CALLED", "CONFIRMED", "NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(entry.status) && (
+                    <button onClick={() => startEdit(entry)} style={{ ...s.actionBtn, background: "#6b7280" }}>
+                      ✏️ Edit
+                    </button>
+                  )}
                 </div>
+                {editingId === entry.id && (
+                  <div style={{ width: "100%", background: "#f9fafb", borderTop: "1px solid #e5e7eb", padding: "12px 16px", display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "flex-end", marginTop: 8 }}>
+                    <div style={s.formGroup}>
+                      <label style={s.formLabel}>Nume</label>
+                      <input value={editForm.guestName} onChange={e => setEditForm(f => ({ ...f, guestName: e.target.value }))} style={s.formInput} placeholder="Nume" />
+                    </div>
+                    <div style={s.formGroup}>
+                      <label style={s.formLabel}>Persoane</label>
+                      <input type="number" min={1} max={20} value={editForm.partySize} onChange={e => setEditForm(f => ({ ...f, partySize: Number(e.target.value) }))} style={{ ...s.formInput, width: 70 }} />
+                    </div>
+                    <div style={s.formGroup}>
+                      <label style={s.formLabel}>Telefon</label>
+                      <input value={editForm.phoneE164} onChange={e => setEditForm(f => ({ ...f, phoneE164: e.target.value }))} style={s.formInput} placeholder="+40..." />
+                    </div>
+                    <button onClick={() => handleEditSave(entry.id)} disabled={editSubmitting} style={s.submitBtn}>{editSubmitting ? "..." : "Salvează"}</button>
+                    <button onClick={() => setEditingId(null)} style={s.cancelBtn}>Anulează</button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
