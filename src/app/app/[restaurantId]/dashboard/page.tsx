@@ -677,39 +677,6 @@ export default function DashboardPage() {
           {sseConnected ? "🟢 Live updates active" : "🔴 Reconnecting... (polling la 15s)"}
         </p>
       </div>
-
-      {/* QR Modal */}
-      {showQR && qrDataUrl && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
-          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100,
-        }} onClick={() => setShowQR(false)}>
-          <div style={{
-            background: "#fff", borderRadius: 20, padding: 32, maxWidth: 360, width: "90%",
-            textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 16 }}>📱 QR Code</div>
-            <img src={qrDataUrl} alt="QR Code" style={{ width: 280, height: 280, borderRadius: 12, border: "2px solid #e5e7eb" }} />
-            <div style={{ fontSize: 11, color: "#9ca3af", margin: "12px 0", wordBreak: "break-all" }}>
-              {`${window.location.origin}/r/${restaurantSlug}`}
-            </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-              <button
-                onClick={downloadQR}
-                style={{ padding: "10px 20px", background: "#16a34a", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, cursor: "pointer", fontSize: 14 }}
-              >
-                ⬇️ Descarcă PNG
-              </button>
-              <button
-                onClick={() => setShowQR(false)}
-                style={{ padding: "10px 20px", background: "transparent", color: "#6b7280", border: "1.5px solid #e5e7eb", borderRadius: 10, fontWeight: 600, cursor: "pointer", fontSize: 14 }}
-              >
-                Închide
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
