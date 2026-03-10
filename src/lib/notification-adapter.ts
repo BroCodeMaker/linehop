@@ -1,5 +1,5 @@
 // Notification provider abstraction
-export type NotificationProvider = "mock" | "whatsapp-real";
+export type NotificationProvider = "mock" | "whatsapp-real" | "twilio";
 
 export interface SendMessageResult {
   ok: boolean;
@@ -86,9 +86,31 @@ class WhatsAppRealAdapter implements NotificationAdapter {
   }
 }
 
+class TwilioAdapter implements NotificationAdapter {
+  async sendMessage(to: string, body: string): Promise<SendMessageResult> {
+    const { sendWhatsApp } = await import("./whatsapp");
+    const result = await sendWhatsApp(to, body);
+    return {
+      ok: result.ok,
+      provider: "twilio",
+      to,
+      externalId: result.sid,
+      error: result.error,
+    };
+  }
+
+  verifyWebhookSignature(_signature: string, _body: string): boolean {
+    return true;
+  }
+}
+
 export function getNotificationAdapter(): NotificationAdapter {
   const provider = process.env.WHATSAPP_PROVIDER || "mock";
-  
+
+  if (provider === "twilio") {
+    return new TwilioAdapter();
+  }
+
   if (provider === "whatsapp-real") {
     return new WhatsAppRealAdapter();
   }
