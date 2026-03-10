@@ -1,14 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
+import { verifySession } from "@/lib/session";
+
+function isAuthed(req: NextRequest): boolean {
+  const token = req.cookies.get("session")?.value;
+  if (!token) return false;
+  return !!verifySession(token);
+}
 
 export async function GET(
-  _req: Request,
+  req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  if (!isAuthed(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await context.params;
-  const cookieStore = await cookies();
-  if (!cookieStore.get("auth_token")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let settings = await prisma.restaurantSettings.findUnique({ where: { restaurantId: id } });
   if (!settings) {
@@ -18,14 +23,23 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  if (!isAuthed(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await context.params;
-  const cookieStore = await cookies();
-  if (!cookieStore.get("auth_token")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
+
+  // Validate maxQueueSize — cap at 50
+  if (body.maxQueueSize !== undefined) {
+    const val = Number(body.maxQueueSize);
+    if (val > 50) {
+      return NextResponse.json({ error: "maxQueueSize cannot exceed 50" }, { status: 400 });
+    }
+    body.maxQueueSize = val;
+  }
+
   const settings = await prisma.restaurantSettings.upsert({
     where: { restaurantId: id },
     update: {

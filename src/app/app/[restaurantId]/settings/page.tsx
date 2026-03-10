@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
+import AdminNav from "@/components/AdminNav";
 
 const FOOD_BG = `radial-gradient(ellipse at 5% 0%, rgba(251,146,60,0.12) 0%, transparent 40%), radial-gradient(ellipse at 95% 100%, rgba(234,179,8,0.08) 0%, transparent 40%), #fdf6ee`;
 
@@ -19,7 +20,6 @@ type Settings = {
 
 export default function SettingsPage() {
   const { restaurantId } = useParams<{ restaurantId: string }>();
-  const router = useRouter();
   const [form, setForm] = useState<Settings>({
     confirmTimerSec: 120,
     arrivalTimerSec: 300,
@@ -62,7 +62,10 @@ export default function SettingsPage() {
   }
 
   function setNum(field: keyof Settings, val: string) {
-    setForm(f => ({ ...f, [field]: Number(val) }));
+    let num = Number(val);
+    // Cap maxQueueSize at 50
+    if (field === "maxQueueSize" && num > 50) num = 50;
+    setForm(f => ({ ...f, [field]: num }));
   }
 
   function setStr(field: keyof Settings, val: string) {
@@ -71,15 +74,8 @@ export default function SettingsPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: FOOD_BG, fontFamily: "system-ui, sans-serif" }}>
-      {/* Header */}
-      <div style={s.header}>
-        <div style={s.headerLeft}>
-          <button onClick={() => router.push(`/app/${restaurantId}/dashboard`)} style={s.backBtn}>
-            ← Dashboard
-          </button>
-          <span style={s.logo}>⚙️ Setări Restaurant</span>
-        </div>
-      </div>
+      {/* Nav */}
+      <AdminNav restaurantId={restaurantId} />
 
       <div style={s.body}>
         {loading ? (
@@ -116,9 +112,9 @@ export default function SettingsPage() {
                   <input type="number" min={1} max={50} value={form.maxPartySize} onChange={e => setNum("maxPartySize", e.target.value)} style={s.input} required />
                 </div>
                 <div style={s.field}>
-                  <label style={s.label}>Max coadă</label>
-                  <p style={s.hint}>Numărul maxim de grupuri în coadă simultan</p>
-                  <input type="number" min={5} max={500} value={form.maxQueueSize} onChange={e => setNum("maxQueueSize", e.target.value)} style={s.input} required />
+                  <label style={s.label}>Max coadă (max 50)</label>
+                  <p style={s.hint}>Numărul maxim de grupuri în coadă simultan (limitat la 50)</p>
+                  <input type="number" min={5} max={50} value={form.maxQueueSize} onChange={e => setNum("maxQueueSize", e.target.value)} style={s.input} required />
                 </div>
               </div>
             </div>
@@ -158,10 +154,6 @@ export default function SettingsPage() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  header: { background: "rgba(255,255,255,0.95)", backdropFilter: "blur(8px)", borderBottom: "1px solid #f0e8dc", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
-  headerLeft: { display: "flex", alignItems: "center", gap: 12 },
-  logo: { fontSize: "18px", fontWeight: 800, color: "#1a1a1a" },
-  backBtn: { padding: "6px 14px", background: "transparent", color: "#6b7280", border: "1.5px solid #e5e7eb", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: 600 },
   body: { padding: "20px 16px", maxWidth: 800, margin: "0 auto" },
   card: { background: "rgba(255,255,255,0.95)", borderRadius: "16px", padding: "20px 24px", marginBottom: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" },
   sectionTitle: { fontSize: "15px", fontWeight: 800, color: "#374151", marginBottom: "16px" },

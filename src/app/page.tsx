@@ -1,138 +1,136 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-const FOOD_BG = `radial-gradient(ellipse at 15% 15%, rgba(251,146,60,0.15) 0%, transparent 45%),
-  radial-gradient(ellipse at 85% 85%, rgba(234,179,8,0.10) 0%, transparent 45%),
-  radial-gradient(ellipse at 50% 50%, rgba(239,68,68,0.05) 0%, transparent 60%),
-  #fdf6ee`;
-
-const FOOD_ITEMS = [
-  { emoji: "🍕", top: "5%",  left: "3%",   size: 52, op: 0.14, rot: -15 },
-  { emoji: "🍝", top: "8%",  right: "5%",  size: 44, op: 0.12, rot: 20  },
-  { emoji: "🥗", top: "30%", left: "1%",   size: 38, op: 0.09, rot: 10  },
-  { emoji: "🍷", top: "55%", right: "2%",  size: 42, op: 0.10, rot: -20 },
-  { emoji: "🥩", bottom: "12%", left: "4%", size: 40, op: 0.11, rot: 15 },
-  { emoji: "🍰", bottom: "6%", right: "3%", size: 48, op: 0.13, rot: -8 },
-  { emoji: "🫕", top: "70%", left: "0%",   size: 36, op: 0.08, rot: 5  },
-  { emoji: "🥂", top: "40%", right: "0%",  size: 38, op: 0.09, rot: -5 },
-];
+import Link from "next/link";
 
 export default function HomePage() {
-  const router = useRouter();
-  const [slug, setSlug] = useState("");
-  const [showSlugInput, setShowSlugInput] = useState(false);
-
-  function handleCustomerGo() {
-    const s = slug.trim().toLowerCase();
-    if (s) router.push(`/r/${s}`);
-  }
-
   return (
-    <div style={{ minHeight: "100vh", background: FOOD_BG, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, sans-serif", position: "relative", padding: "16px" }}>
-      {/* Food decorations */}
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
-        {FOOD_ITEMS.map((f, i) => (
-          <div key={i} style={{ position: "absolute", fontSize: f.size, opacity: f.op, transform: `rotate(${f.rot}deg)`, top: f.top, right: (f as {right?: string}).right, bottom: f.bottom, left: f.left }}>
-            {f.emoji}
-          </div>
-        ))}
-      </div>
+    <div style={{ minHeight: "100vh", fontFamily: "system-ui, -apple-system, sans-serif", background: "linear-gradient(135deg, #fff7ed 0%, #ffffff 50%, #fefce8 100%)", margin: 0 }}>
+      {/* Hero */}
+      <section style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "70vh", textAlign: "center", padding: "64px 24px 48px" }}>
+        <div style={{ fontSize: 80, marginBottom: 24 }}>🍽️</div>
+        <h1 style={{ fontSize: "clamp(36px, 6vw, 64px)", fontWeight: 900, color: "#111827", lineHeight: 1.1, marginBottom: 16, letterSpacing: "-0.03em" }}>
+          Scapă de cozi.
+          <br />
+          <span style={{ color: "#f97316" }}>Intri când ți-e rândul.</span>
+        </h1>
+        <p style={{ fontSize: "clamp(16px, 2vw, 20px)", color: "#6b7280", maxWidth: 520, marginBottom: 40, lineHeight: 1.6 }}>
+          Sistem inteligent de așteptare pentru restaurante. Clienții primesc notificare WhatsApp când le vine rândul.
+        </p>
+        <Link
+          href="/app/login"
+          style={{
+            display: "inline-block",
+            background: "linear-gradient(135deg, #f97316, #ea580c)",
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 18,
+            padding: "16px 40px",
+            borderRadius: 16,
+            textDecoration: "none",
+            boxShadow: "0 8px 32px rgba(249,115,22,0.35)",
+            transition: "transform 0.15s, box-shadow 0.15s",
+          }}
+        >
+          Înregistrează-ți locația →
+        </Link>
+      </section>
 
-      <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 420 }}>
-        {/* Logo / Title */}
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: 64, marginBottom: 8 }}>🍽️</div>
-          <h1 style={{ fontSize: 32, fontWeight: 900, margin: 0, color: "#1a1a1a", letterSpacing: "-0.02em" }}>
-            WaitList
-          </h1>
-          <p style={{ color: "#9ca3af", fontSize: 15, marginTop: 6 }}>
-            Sistem inteligent de așteptare pentru restaurante
-          </p>
+      {/* How it works */}
+      <section style={{ padding: "0 24px 96px", maxWidth: 960, margin: "0 auto" }}>
+        <h2 style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 800, textAlign: "center", color: "#1f2937", marginBottom: 48 }}>
+          Cum funcționează?
+        </h2>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}>
+          {/* Step 1 */}
+          <div style={card("#fff7ed", "#fed7aa")}>
+            <div style={{ fontSize: 52, marginBottom: 12 }}>📱</div>
+            <div style={stepBadge("#ffedd5", "#c2410c")}>Pasul 1</div>
+            <h3 style={cardTitle}>Scanezi QR</h3>
+            <p style={cardDesc}>
+              Scanezi codul QR de la intrarea restaurantului și te înscrii în coadă de pe telefon, fără să aștepți la ușă.
+            </p>
+          </div>
+
+          {/* Step 2 */}
+          <div style={card("#eff6ff", "#bfdbfe")}>
+            <div style={{ fontSize: 52, marginBottom: 12 }}>💬</div>
+            <div style={stepBadge("#dbeafe", "#1d4ed8")}>Pasul 2</div>
+            <h3 style={cardTitle}>Primești notificare</h3>
+            <p style={cardDesc}>
+              Când îți vine rândul, primești un mesaj WhatsApp. Poți să te plimbi liber — nu trebuie să aștepți la ușă.
+            </p>
+          </div>
+
+          {/* Step 3 */}
+          <div style={card("#f0fdf4", "#bbf7d0")}>
+            <div style={{ fontSize: 52, marginBottom: 12 }}>🪑</div>
+            <div style={stepBadge("#dcfce7", "#15803d")}>Pasul 3</div>
+            <h3 style={cardTitle}>Vii când ești chemat</h3>
+            <p style={cardDesc}>
+              Confirmi că ești pe drum și ajungi la restaurant — masa ta te așteaptă. Simplu, fără stres.
+            </p>
+          </div>
         </div>
 
-        {/* Restaurant button */}
-        <a href="/app/login" style={{ textDecoration: "none" }}>
-          <div style={s.bigCard("#ea580c", "#dc2626", "#fff8f0", "#fed7aa")}>
-            <div style={s.cardIcon}>👨‍🍳</div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 19, color: "#1a1a1a", marginBottom: 4 }}>
-                Sunt Restaurant
-              </div>
-              <div style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.4 }}>
-                Gestionează coada de așteptare,<br />cheamă clienți, marchează locuri
-              </div>
-            </div>
-            <div style={{ marginLeft: "auto", fontSize: 22, color: "#ea580c" }}>→</div>
-          </div>
-        </a>
-
-        {/* Customer button */}
-        {!showSlugInput ? (
-          <button onClick={() => setShowSlugInput(true)} style={{ ...s.bigCard("#2563eb", "#1d4ed8", "#eff6ff", "#bfdbfe"), border: "none", width: "100%", cursor: "pointer", textAlign: "left" as const }}>
-            <div style={s.cardIcon}>🧑‍💼</div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 19, color: "#1a1a1a", marginBottom: 4 }}>
-                Sunt Client
-              </div>
-              <div style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.4 }}>
-                Introdu codul restaurantului<br />sau scanează QR-ul de la intrare
-              </div>
-            </div>
-            <div style={{ marginLeft: "auto", fontSize: 22, color: "#2563eb" }}>→</div>
-          </button>
-        ) : (
-          <div style={{ ...s.bigCard("#2563eb", "#1d4ed8", "#eff6ff", "#bfdbfe"), flexDirection: "column" as const, gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={s.cardIcon}>🧑‍💼</div>
-              <div style={{ fontWeight: 800, fontSize: 19, color: "#1a1a1a" }}>Sunt Client</div>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <input
-                autoFocus
-                type="text"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCustomerGo()}
-                placeholder="cod restaurant (ex: pizza-roma)"
-                style={{ flex: 1, padding: "11px 14px", borderRadius: 10, border: "1.5px solid #bfdbfe", fontSize: 15, outline: "none", background: "#fff" }}
-              />
-              <button
-                onClick={handleCustomerGo}
-                disabled={!slug.trim()}
-                style={{ padding: "11px 18px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: "pointer", opacity: slug.trim() ? 1 : 0.5 }}
-              >
-                Mergi
-              </button>
-            </div>
-            <button onClick={() => setShowSlugInput(false)} style={{ fontSize: 12, color: "#9ca3af", background: "none", border: "none", cursor: "pointer" }}>
-              Anulează
-            </button>
-          </div>
-        )}
-
-        <p style={{ textAlign: "center", fontSize: 12, color: "#d1d5db", marginTop: 24 }}>
-          Clienții intră pe pagina restaurantului prin QR cod
-        </p>
-      </div>
+        {/* Bottom CTA */}
+        <div style={{ marginTop: 64, textAlign: "center" }}>
+          <p style={{ color: "#9ca3af", fontSize: 14, marginBottom: 16 }}>Ești administrator de restaurant?</p>
+          <Link
+            href="/app/login"
+            style={{
+              display: "inline-block",
+              background: "#111827",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 15,
+              padding: "12px 32px",
+              borderRadius: 12,
+              textDecoration: "none",
+            }}
+          >
+            👨‍🍳 Intră în dashboard
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }
 
-const s = {
-  bigCard: (from: string, to: string, bg: string, border: string): React.CSSProperties => ({
-    display: "flex",
-    alignItems: "center",
-    gap: 16,
+function card(bg: string, border: string): React.CSSProperties {
+  return {
     background: bg,
     border: `2px solid ${border}`,
-    borderRadius: 16,
-    padding: "20px 20px",
-    marginBottom: 12,
-    boxShadow: `0 4px 20px ${from}22`,
-    transition: "transform 0.15s, box-shadow 0.15s",
-    textDecoration: "none",
-  }),
-  cardIcon: { fontSize: 36, flexShrink: 0 } as React.CSSProperties,
+    borderRadius: 24,
+    padding: "32px 28px",
+    textAlign: "center",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+  };
+}
+
+function stepBadge(bg: string, color: string): React.CSSProperties {
+  return {
+    background: bg,
+    color,
+    fontWeight: 700,
+    fontSize: 12,
+    borderRadius: 9999,
+    padding: "4px 14px",
+    display: "inline-block",
+  };
+}
+
+const cardTitle: React.CSSProperties = {
+  fontSize: 20,
+  fontWeight: 800,
+  color: "#111827",
+  margin: 0,
+};
+
+const cardDesc: React.CSSProperties = {
+  color: "#6b7280",
+  fontSize: 14,
+  lineHeight: 1.6,
+  margin: 0,
 };

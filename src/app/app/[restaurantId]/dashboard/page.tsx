@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
+import AdminNav from "@/components/AdminNav";
 
 type Entry = {
   id: string;
@@ -371,18 +372,15 @@ export default function DashboardPage() {
         }
       `}</style>
 
-      {/* Header */}
-      <div style={s.header}>
-        <div style={s.headerLeft}>
-          <span style={s.logo}>🍽️ Queue Dashboard</span>
-        </div>
-        <div style={s.headerRight}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: sseConnected ? "#16a34a" : "#ef4444" }}>
-            {sseConnected ? "🟢 Live" : "🔴 Reconnecting..."}
-          </span>
-          <button onClick={() => router.push(`/app/${restaurantId}/settings`)} style={s.logoutBtn}>⚙️ Settings</button>
-          <button onClick={handleLogout} style={s.logoutBtn}>Logout</button>
-        </div>
+      {/* Nav */}
+      <AdminNav restaurantId={restaurantId} />
+
+      {/* Live status indicator */}
+      <div style={{ background: "#fff", borderBottom: "1px solid #f3f4f6", padding: "6px 20px", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: sseConnected ? "#16a34a" : "#ef4444" }}>
+          {sseConnected ? "🟢 Live" : "🔴 Reconnecting..."}
+        </span>
+        <span style={{ fontSize: 12, color: "#9ca3af" }}>Queue Dashboard</span>
       </div>
 
       <div style={s.body}>
