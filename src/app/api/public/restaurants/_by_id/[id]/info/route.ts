@@ -9,10 +9,10 @@ export async function GET(
     const { id } = await context.params;
     const restaurant = await prisma.restaurant.findUnique({
       where: { id },
-      select: { id: true, name: true, status: true },
+      select: { id: true, name: true, status: true, slug: true },
     });
     if (!restaurant) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json({ name: restaurant.name, status: restaurant.status });
+    return NextResponse.json({ name: restaurant.name, status: restaurant.status, slug: restaurant.slug });
   } catch (err) {
     console.error("[by_id/info]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

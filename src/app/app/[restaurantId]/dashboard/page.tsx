@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import QRCode from "qrcode";
 
 type Entry = {
   id: string;
@@ -134,6 +135,9 @@ export default function DashboardPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{ guestName: string; partySize: number; phoneE164: string }>({ guestName: "", partySize: 2, phoneE164: "" });
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
+  const [restaurantSlug, setRestaurantSlug] = useState<string>("");
   const sseRef = useRef<EventSource | null>(null);
 
   const fetchQueue = useCallback(async () => {
@@ -293,6 +297,32 @@ export default function DashboardPage() {
     setTimeout(() => setMessage(null), 3000);
   }
 
+  async function openQR() {
+    try {
+      const res = await fetch(`/api/public/restaurants/_by_id/${restaurantId}/info`);
+      const data = await res.json();
+      const slug = data.slug ?? restaurantId;
+      setRestaurantSlug(slug);
+      const joinUrl = `${window.location.origin}/r/${slug}`;
+      const dataUrl = await QRCode.toDataURL(joinUrl, {
+        width: 300,
+        margin: 2,
+        color: { dark: "#1a1a1a", light: "#ffffff" },
+      });
+      setQrDataUrl(dataUrl);
+      setShowQR(true);
+    } catch {
+      setMessage({ text: "❌ Nu s-a putut genera QR codul", type: "info" });
+    }
+  }
+
+  function downloadQR() {
+    const a = document.createElement("a");
+    a.href = qrDataUrl;
+    a.download = `waitlist-qr-${restaurantSlug}.png`;
+    a.click();
+  }
+
   function startEdit(entry: Entry) {
     setEditingId(entry.id);
     setEditForm({
@@ -438,6 +468,9 @@ export default function DashboardPage() {
           <button onClick={() => setShowWalkIn(v => !v)} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#e0e7ff", color: "#3730a3", border: "2px solid #a5b4fc" }}>
             🚶 Walk-in
           </button>
+          <button onClick={openQR} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#f0fdf4", color: "#166534", border: "2px solid #86efac" }}>
+            📱 QR Code
+          </button>
         </div>
 
         {/* Manual Add Form */}
@@ -473,6 +506,43 @@ export default function DashboardPage() {
                 </button>
               ))}
               <button onClick={() => setShowWalkIn(false)} style={s.cancelBtn}>✕</button>
+            </div>
+          </div>
+        )}
+
+        {/* QR Modal */}
+        {showQR && (
+          <div style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100,
+            display: "flex", alignItems: "center", justifyContent: "center"
+          }} onClick={() => setShowQR(false)}>
+            <div style={{
+              background: "#fff", borderRadius: 20, padding: 32, textAlign: "center",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)", maxWidth: 380, width: "90%"
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8, color: "#1a1a1a" }}>
+                📱 QR Cod Intrare
+              </div>
+              <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+                {`${typeof window !== "undefined" ? window.location.origin : ""}/r/${restaurantSlug}`}
+              </div>
+              {qrDataUrl && (
+                <img src={qrDataUrl} alt="QR Code" style={{ width: 260, height: 260, borderRadius: 12, border: "2px solid #e5e7eb" }} />
+              )}
+              <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "center" }}>
+                <button onClick={downloadQR} style={{
+                  padding: "10px 24px", background: "#16a34a", color: "#fff",
+                  border: "none", borderRadius: 10, fontWeight: 700, cursor: "pointer", fontSize: 14
+                }}>
+                  ⬇️ Descarcă PNG
+                </button>
+                <button onClick={() => setShowQR(false)} style={{
+                  padding: "10px 24px", background: "transparent", color: "#6b7280",
+                  border: "1.5px solid #e5e7eb", borderRadius: 10, cursor: "pointer", fontSize: 14
+                }}>
+                  Închide
+                </button>
+              </div>
             </div>
           </div>
         )}
