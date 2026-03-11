@@ -37,7 +37,8 @@ export async function GET(
           status: true,
           createdAt: true,
           seatedAt: true,
-          updatedAt: true,
+          canceledAt: true,
+          expiredAt: true,
           phoneE164: true,
         },
       }),
@@ -58,8 +59,9 @@ export async function GET(
         waitMinutes = Math.round((e.seatedAt.getTime() - e.createdAt.getTime()) / 60000)
       }
 
-      if (['CANCELLED', 'EXPIRED'].includes(e.status)) {
-        cancelAfterMinutes = Math.round((e.updatedAt.getTime() - e.createdAt.getTime()) / 60000)
+      const endTime = e.canceledAt ?? e.expiredAt
+      if (['CANCELLED', 'EXPIRED'].includes(e.status) && endTime) {
+        cancelAfterMinutes = Math.round((endTime.getTime() - e.createdAt.getTime()) / 60000)
       }
 
       return {
