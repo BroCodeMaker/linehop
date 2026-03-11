@@ -51,6 +51,7 @@ class WhatsAppRealAdapter implements NotificationAdapter {
     }
 
     try {
+      console.log("[WhatsApp] Sending to:", to, "| URL:", this.apiUrl, "| Token prefix:", this.apiToken.slice(0,20));
       const response = await fetch(this.apiUrl, {
         method: "POST",
         headers: {
@@ -71,6 +72,8 @@ class WhatsAppRealAdapter implements NotificationAdapter {
         return { ok: true, provider: "whatsapp-real", to, externalId: data.messages[0].id };
       }
 
+      const errText = await response.text().catch(() => "");
+      console.log("[WhatsApp] API error:", response.status, errText);
       return { ok: false, provider: "whatsapp-real", to, error: `API error: ${response.status}` };
     } catch (err) {
       return { ok: false, provider: "whatsapp-real", to, error: String(err) };
