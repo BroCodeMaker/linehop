@@ -41,7 +41,7 @@ class WhatsAppRealAdapter implements NotificationAdapter {
   constructor() {
     this.apiToken = process.env.WHATSAPP_API_TOKEN || "";
     this.phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || "";
-    this.apiUrl = `https://graph.instagram.com/v18.0/${this.phoneNumberId}/messages`;
+    this.apiUrl = `https://graph.facebook.com/v18.0/${this.phoneNumberId}/messages`;
   }
 
   async sendMessage(to: string, body: string): Promise<SendMessageResult> {
