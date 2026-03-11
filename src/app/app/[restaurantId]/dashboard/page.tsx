@@ -469,6 +469,13 @@ export default function DashboardPage() {
           <button onClick={openQR} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#f0fdf4", color: "#166534", border: "2px solid #86efac" }}>
             📱 QR Code
           </button>
+          <button onClick={async () => {
+            if (!confirm("Ștergi toată coada? (doar pentru teste)")) return;
+            await fetch(`/api/restaurants/${restaurantId}/reset-test`, { method: "POST" });
+            fetchQueue();
+          }} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#fff1f2", color: "#be123c", border: "2px solid #fda4af" }}>
+            🗑️ Reset Test
+          </button>
         </div>
 
         {/* Manual Add Form */}
