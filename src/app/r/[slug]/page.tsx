@@ -6,8 +6,10 @@ import { useParams, useRouter } from "next/navigation";
 type RestaurantInfo = {
   name: string;
   status: "OPEN" | "FULL" | "CLOSED" | "PAUSED";
+  listClosed: boolean;
   queueLength: number;
   estimatedWaitMinutes: number;
+  waitMinutesPerGroup: number;
 };
 
 const FOOD_BG = `radial-gradient(ellipse at 10% 20%, rgba(251,146,60,0.10) 0%, transparent 50%),
@@ -93,7 +95,6 @@ export default function JoinPage() {
     </div>
   );
 
-  // Feature 4: PAUSED status
   if (info.status === "PAUSED") return (
     <div style={{ ...s.page, background: FOOD_BG }}>
       <FoodDecorations />
@@ -106,16 +107,30 @@ export default function JoinPage() {
     </div>
   );
 
-  // Feature 5: OPEN message
+  // Lista închisă — clienții existenți în coadă nu sunt afectați
+  if (info.listClosed) return (
+    <div style={{ ...s.page, background: FOOD_BG }}>
+      <FoodDecorations />
+      <div style={s.card}>
+        <div style={s.headerEmoji}>🔒</div>
+        <h1 style={s.title}>{info.name}</h1>
+        <div style={{ ...s.banner, background: "#f3f4f6", color: "#374151" }}>Lista de așteptare este închisă momentan</div>
+        <p style={s.muted}>Reveniți mai târziu sau contactați personalul restaurantului.</p>
+      </div>
+    </div>
+  );
+
   if (info.status === "OPEN") return (
     <div style={{ ...s.page, background: FOOD_BG }}>
       <FoodDecorations />
       <div style={s.card}>
         <div style={s.headerEmoji}>🍽️</div>
         <h1 style={s.title}>{info.name}</h1>
-        <div style={{ ...s.banner, background: "#dcfce7", color: "#166534" }}>✅ Mese disponibile</div>
+        <div style={{ ...s.banner, background: "#fef3c7", color: "#92400e" }}>
+          Vă rugăm să intrați pentru alocarea locului la masă
+        </div>
         <p style={{ fontSize: 15, color: "#374151", textAlign: "center", margin: "16px 0" }}>
-          În acest moment nu există listă de așteptare. Vă poftim înăuntru pentru așezarea la masă.
+          În acest moment nu există listă de așteptare.
         </p>
       </div>
     </div>

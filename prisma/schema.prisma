@@ -8,15 +8,16 @@ datasource db {
 }
 
 model Restaurant {
-  id        String              @id @default(uuid())
-  name      String
-  slug      String              @unique
-  timezone  String              @default("Europe/Bucharest")
-  status    String              @default("OPEN")
-  createdAt DateTime            @default(now())
-  settings  RestaurantSettings?
-  users     RestaurantUser[]
-  entries   WaitlistEntry[]
+  id         String              @id @default(uuid())
+  name       String
+  slug       String              @unique
+  timezone   String              @default("Europe/Bucharest")
+  status     String              @default("OPEN")
+  listClosed Boolean             @default(false)
+  createdAt  DateTime            @default(now())
+  settings   RestaurantSettings?
+  users      RestaurantUser[]
+  entries    WaitlistEntry[]
 }
 
 model RestaurantSettings {
@@ -28,6 +29,7 @@ model RestaurantSettings {
   maxCallAgain         Int        @default(1)
   maxPartySize         Int        @default(10)
   maxQueueSize         Int        @default(50)
+  waitMinutesPerGroup  Int        @default(10)
   msgWhatsappCall      String     @default("Vă rugăm să vă prezentați la intrare în 2 minute.")
   msgWhatsappExpire    String     @default("Din păcate locul dumneavoastră a expirat.")
   msgWhatsappCallAgain String     @default("Vă mai acordăm o șansă, vă rugăm să vă prezentați.")

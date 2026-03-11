@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import AdminNav from "@/components/AdminNav";
+import { APP_VERSION } from "@/lib/version";
 
 type Entry = {
   id: string;
@@ -118,12 +119,17 @@ function BufferTimer({ expiredAt }: { expiredAt: string }) {
   return <span style={{ fontSize: 11, color: "#9ca3af" }}>ascuns în {m}:{sc.toString().padStart(2, "0")}</span>;
 }
 
+// Suppress unused import warning
+void timeAgo;
+
 export default function DashboardPage() {
   const { restaurantId } = useParams<{ restaurantId: string }>();
   const router = useRouter();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [restStatus, setRestStatus] = useState<RestStatus>("OPEN");
+  // null = not yet loaded from DB (prevents highlight flicker on refresh)
+  const [restStatus, setRestStatus] = useState<RestStatus | null>(null);
+  const [listClosed, setListClosed] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [callingNext, setCallingNext] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "ok" | "info" } | null>(null);
@@ -139,6 +145,7 @@ export default function DashboardPage() {
   const [showQR, setShowQR] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [restaurantSlug, setRestaurantSlug] = useState<string>("");
+  const [togglingList, setTogglingList] = useState(false);
   const sseRef = useRef<EventSource | null>(null);
 
   const fetchQueue = useCallback(async () => {
@@ -157,6 +164,7 @@ export default function DashboardPage() {
       if (res.ok) {
         const d = await res.json();
         setRestStatus(d.status);
+        setListClosed(d.listClosed ?? false);
       }
     } catch { /* ignore */ }
   }, [restaurantId]);
@@ -231,6 +239,24 @@ export default function DashboardPage() {
     } finally {
       setChangingStatus(false);
       setTimeout(() => setMessage(null), 4000);
+    }
+  }
+
+  async function handleToggleList() {
+    setTogglingList(true);
+    try {
+      const res = await fetch(`/api/restaurants/${restaurantId}/toggle-list`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setListClosed(data.listClosed);
+        setMessage({
+          text: data.listClosed ? "🔒 Lista de așteptare a fost închisă." : "🔓 Lista de așteptare a fost deschisă.",
+          type: "info",
+        });
+        setTimeout(() => setMessage(null), 3000);
+      }
+    } finally {
+      setTogglingList(false);
     }
   }
 
@@ -363,6 +389,9 @@ export default function DashboardPage() {
     CLOSED: { label: "Închis",          active: "#6b7280", icon: "🌙" },
   };
 
+  // Suppress unused warning
+  void handleLogout;
+
   return (
     <div style={{ minHeight: "100vh", background: FOOD_BG, fontFamily: "system-ui, sans-serif" }}>
       <style>{`
@@ -381,6 +410,7 @@ export default function DashboardPage() {
           {sseConnected ? "🟢 Live" : "🔴 Reconnecting..."}
         </span>
         <span style={{ fontSize: 12, color: "#9ca3af" }}>Queue Dashboard</span>
+        <span style={{ fontSize: 11, color: "#d1d5db", marginLeft: "auto" }}>v{APP_VERSION}</span>
       </div>
 
       <div style={s.body}>
@@ -390,12 +420,13 @@ export default function DashboardPage() {
           <div style={s.statusRow}>
             {(["OPEN", "FULL", "PAUSED", "CLOSED"] as RestStatus[]).map((st) => {
               const c = statusCfg[st];
+              // restStatus === null means still loading — no button highlighted
               const isActive = restStatus === st;
               return (
                 <button
                   key={st}
                   onClick={() => handleSetStatus(st)}
-                  disabled={changingStatus}
+                  disabled={changingStatus || restStatus === null}
                   style={{
                     ...s.statusBtn,
                     background: isActive ? c.active : "#fff",
@@ -409,6 +440,32 @@ export default function DashboardPage() {
                 </button>
               );
             })}
+          </div>
+
+          {/* Lista Închisă toggle */}
+          <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
+            <button
+              onClick={handleToggleList}
+              disabled={togglingList}
+              style={{
+                padding: "8px 16px",
+                background: listClosed ? "#1f2937" : "#f9fafb",
+                color: listClosed ? "#fff" : "#374151",
+                border: `2px solid ${listClosed ? "#1f2937" : "#e5e7eb"}`,
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              {listClosed ? "🔓 Deschide lista" : "🔒 Închide lista"}
+            </button>
+            {listClosed && (
+              <span style={{ fontSize: 12, color: "#6b7280" }}>
+                Clienții noi nu pot intra în coadă
+              </span>
+            )}
           </div>
         </div>
 

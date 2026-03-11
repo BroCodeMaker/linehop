@@ -13,6 +13,7 @@ type Settings = {
   maxCallAgain: number;
   maxPartySize: number;
   maxQueueSize: number;
+  waitMinutesPerGroup: number;
   msgWhatsappCall: string;
   msgWhatsappExpire: string;
   msgWhatsappCallAgain: string;
@@ -27,6 +28,7 @@ export default function SettingsPage() {
     maxCallAgain: 1,
     maxPartySize: 10,
     maxQueueSize: 50,
+    waitMinutesPerGroup: 10,
     msgWhatsappCall: "Vă rugăm să vă prezentați la intrare în 2 minute.",
     msgWhatsappExpire: "Din păcate locul dumneavoastră a expirat.",
     msgWhatsappCallAgain: "Vă mai acordăm o șansă, vă rugăm să vă prezentați.",
@@ -115,6 +117,11 @@ export default function SettingsPage() {
                   <label style={s.label}>Max coadă (max 50)</label>
                   <p style={s.hint}>Numărul maxim de grupuri în coadă simultan (limitat la 50)</p>
                   <input type="number" min={5} max={50} value={form.maxQueueSize} onChange={e => setNum("maxQueueSize", e.target.value)} style={s.input} required />
+                </div>
+                <div style={s.field}>
+                  <label style={s.label}>Minute estimate per grup</label>
+                  <p style={s.hint}>Timp estimat de așteptare per grup (minute). Afișat clienților.</p>
+                  <input type="number" min={1} max={120} value={form.waitMinutesPerGroup} onChange={e => setNum("waitMinutesPerGroup", e.target.value)} style={s.input} required />
                 </div>
               </div>
             </div>

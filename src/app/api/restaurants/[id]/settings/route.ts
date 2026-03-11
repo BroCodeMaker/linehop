@@ -49,6 +49,7 @@ export async function PUT(
       maxCallAgain: body.maxCallAgain !== undefined ? Number(body.maxCallAgain) : undefined,
       maxPartySize: body.maxPartySize !== undefined ? Number(body.maxPartySize) : undefined,
       maxQueueSize: body.maxQueueSize !== undefined ? Number(body.maxQueueSize) : undefined,
+      waitMinutesPerGroup: body.waitMinutesPerGroup !== undefined ? Number(body.waitMinutesPerGroup) : undefined,
       msgWhatsappCall: body.msgWhatsappCall,
       msgWhatsappExpire: body.msgWhatsappExpire,
       msgWhatsappCallAgain: body.msgWhatsappCallAgain,
