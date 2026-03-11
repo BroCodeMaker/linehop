@@ -17,13 +17,14 @@ export async function GET(
       where: { restaurantId: id, status: 'WAITING' },
     })
 
-    // 2. Seated tonight + avg wait
+    // 2. Seated tonight + avg wait (exclude walk-ins: phoneE164 = "+00000000000")
     const seatedToday = await prisma.waitlistEntry.findMany({
       where: {
         restaurantId: id,
         status: 'SEATED',
         seatedAt: { gte: todayStart },
         createdAt: { gte: todayStart },
+        phoneE164: { not: '+00000000000' },
       },
       select: { createdAt: true, seatedAt: true },
     })
