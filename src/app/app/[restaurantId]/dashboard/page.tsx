@@ -160,7 +160,7 @@ export default function DashboardPage() {
 
   const fetchRestStatus = useCallback(async () => {
     try {
-      const res = await fetch(`/api/public/restaurants/_by_id/${restaurantId}/info`);
+      const res = await fetch(`/api/public/restaurants/by-id/${restaurantId}/info`);
       if (res.ok) {
         const d = await res.json();
         setRestStatus(d.status);
@@ -326,7 +326,7 @@ export default function DashboardPage() {
 
   async function openQR() {
     try {
-      const res = await fetch(`/api/public/restaurants/_by_id/${restaurantId}/info`);
+      const res = await fetch(`/api/public/restaurants/by-id/${restaurantId}/info`);
       const data = await res.json();
       const slug = data.slug ?? restaurantId;
       setRestaurantSlug(slug);

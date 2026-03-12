@@ -34,3 +34,4 @@ prisma/migrations/
 .turbo
 dist/
 build/
+.vercel
