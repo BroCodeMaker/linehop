@@ -3,6 +3,13 @@ import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { normalizePhone } from '@/lib/phone'
 import { emitUpdate } from '@/lib/emitter'
+import { verifySession } from "@/lib/session";
+
+function isAuthed(req: NextRequest): boolean {
+  const token = req.cookies.get("session")?.value;
+  if (!token) return false;
+  return !!verifySession(token);
+}
 
 const ManualAddSchema = z.object({
   guestName: z.string().min(1),
@@ -14,6 +21,9 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  if (!isAuthed(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   try {
     const { id } = await context.params
     const body = await request.json()

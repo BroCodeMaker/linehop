@@ -35,6 +35,31 @@ export async function POST(
       return NextResponse.json({ error: "Waitlist not active", restaurantStatus: restaurant.status }, { status: 409 });
     }
 
+    // Check restaurant-specific maxPartySize
+    const settings = await prisma.restaurantSettings.findUnique({
+      where: { restaurantId: restaurant.id },
+      select: { maxPartySize: true, maxQueueSize: true },
+    });
+    const maxPartySize = settings?.maxPartySize ?? 10;
+    if (partySize > maxPartySize) {
+      return NextResponse.json({
+        error: `Numărul maxim de persoane permis este ${maxPartySize}.`,
+        maxPartySize,
+      }, { status: 400 });
+    }
+
+    // Check maxQueueSize
+    const maxQueueSize = settings?.maxQueueSize ?? 50;
+    const currentQueueSize = await prisma.waitlistEntry.count({
+      where: { restaurantId: restaurant.id, status: "WAITING" },
+    });
+    if (currentQueueSize >= maxQueueSize) {
+      return NextResponse.json({
+        error: "Lista de așteptare este plină. Vă rugăm să încercați mai târziu.",
+        queueFull: true,
+      }, { status: 409 });
+    }
+
     const phoneE164 = normalizePhone(phone);
 
     // Feature 8: Block same phone with ANY status (already in waitlist or participated)

@@ -1,15 +1,25 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { sendWhatsAppMessage } from '@/lib/notify'
 import { emitUpdate } from '@/lib/emitter'
 import { scheduleReminder } from '@/lib/timers'
+import { verifySession } from "@/lib/session";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://waitlist-app-plum.vercel.app'
 
+function isAuthed(req: NextRequest): boolean {
+  const token = req.cookies.get("session")?.value;
+  if (!token) return false;
+  return !!verifySession(token);
+}
+
 export async function POST(
-  _request: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string; entryId: string }> }
 ) {
+  if (!isAuthed(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   try {
     const { id, entryId } = await context.params
 

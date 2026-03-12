@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.2] - 2026-03-13
+### Fixed
+- SECURITY: Added authentication to 9 unprotected API routes (status, call-next, reset-test, add-manual, walk-in, call, seat, skip, call-again)
+- Fixed maxPartySize validation: join route now checks restaurant settings (not hardcoded max 20)
+- Fixed maxQueueSize validation: join route now rejects when queue is full
+
+### Security
+- All admin API endpoints now require session cookie authentication
+- /reset-test can no longer be called without auth (previously allowed anyone to clear queue)
+
 ## [1.0.0] - 2026-03-12
 ### Added
 - v1.0.0 displayed in dashboard
