@@ -25,6 +25,7 @@ export default function JoinPage() {
   const [partySize, setPartySize] = useState(2);
   const [phone, setPhone] = useState("");
   const [guestName, setGuestName] = useState("");
+  const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -52,7 +53,7 @@ export default function JoinPage() {
       const res = await fetch(`/api/public/restaurants/${slug}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ partySize, phone, guestName: guestName || undefined }),
+        body: JSON.stringify({ partySize, phone, guestName: guestName || undefined, note: note || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -170,6 +171,9 @@ export default function JoinPage() {
 
           <label style={s.label}>Nume (opțional)</label>
           <input type="text" value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Numele tău" style={s.input} />
+
+          <label style={s.label}>Notă (opțional)</label>
+          <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="ex: scaun înalt, terasă..." style={s.input} maxLength={200} />
 
           {error && <p style={s.error}>{error}</p>}
 

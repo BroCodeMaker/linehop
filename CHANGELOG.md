@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1] - 2026-03-13
+### Added
+- Note field ('Notă (opțional)') on public join form — saved to entry notes
+- Settings: 'Folosește media calculată automat' checkbox for estimated table time
+  - When enabled, customer wait estimates use the dynamically calculated avg turnover from SEATED entries
+  - Manual input is disabled/grayed out when auto-calc is active
+
 ## [1.2.0] - 2026-03-13
 ### Changed
 - Rebrand to LineHop (from WaitListApp)

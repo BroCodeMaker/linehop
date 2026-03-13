@@ -34,6 +34,7 @@ model RestaurantSettings {
   msgWhatsappCall       String     @default("Vă rugăm să vă prezentați la intrare în 2 minute.")
   msgWhatsappExpire     String     @default("Din păcate locul dumneavoastră a expirat.")
   msgWhatsappCallAgain  String     @default("Vă mai acordăm o șansă, vă rugăm să vă prezentați.")
+  useCalculatedAvgTime  Boolean    @default(false)
   updatedAt             DateTime   @updatedAt
   restaurant            Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }

@@ -15,6 +15,7 @@ type Settings = {
   maxQueueSize: number;
   waitMinutesPerGroup: number;
   estimatedTableTimeMin: number;
+  useCalculatedAvgTime: boolean;
   msgWhatsappCall: string;
   msgWhatsappExpire: string;
   msgWhatsappCallAgain: string;
@@ -31,6 +32,7 @@ export default function SettingsPage() {
     maxQueueSize: 50,
     waitMinutesPerGroup: 10,
     estimatedTableTimeMin: 15,
+    useCalculatedAvgTime: false,
     msgWhatsappCall: "Vă rugăm să vă prezentați la intrare în 2 minute.",
     msgWhatsappExpire: "Din păcate locul dumneavoastră a expirat.",
     msgWhatsappCallAgain: "Vă mai acordăm o șansă, vă rugăm să vă prezentați.",
@@ -150,8 +152,9 @@ export default function SettingsPage() {
                     max={300}
                     value={form.estimatedTableTimeMin}
                     onChange={e => setNum("estimatedTableTimeMin", e.target.value)}
-                    style={{ ...s.input, width: 100 }}
-                    required
+                    style={{ ...s.input, width: 100, opacity: form.useCalculatedAvgTime ? 0.4 : 1 }}
+                    disabled={form.useCalculatedAvgTime}
+                    required={!form.useCalculatedAvgTime}
                   />
                   {calculatedAvgMin != null ? (
                     <span style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, background: "#f0fdf4", padding: "4px 10px", borderRadius: 8, border: "1px solid #bbf7d0" }}>
@@ -163,6 +166,25 @@ export default function SettingsPage() {
                     </span>
                   )}
                 </div>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, cursor: "pointer", fontSize: 13, color: "#374151", fontWeight: 600 }}>
+                  <input
+                    type="checkbox"
+                    checked={form.useCalculatedAvgTime}
+                    onChange={e => setForm(f => ({ ...f, useCalculatedAvgTime: e.target.checked }))}
+                    style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#16a34a" }}
+                  />
+                  Folosește media calculată automat
+                  {form.useCalculatedAvgTime && calculatedAvgMin != null && (
+                    <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 400, marginLeft: 4 }}>
+                      ({calculatedAvgMin} min)
+                    </span>
+                  )}
+                  {form.useCalculatedAvgTime && calculatedAvgMin == null && (
+                    <span style={{ fontSize: 12, color: "#f59e0b", fontWeight: 400, marginLeft: 4 }}>
+                      (insuficient date — se folosește valoarea manuală)
+                    </span>
+                  )}
+                </label>
               </div>
             </div>
 

@@ -51,6 +51,7 @@ export async function PUT(
       maxQueueSize: body.maxQueueSize !== undefined ? Number(body.maxQueueSize) : undefined,
       waitMinutesPerGroup: body.waitMinutesPerGroup !== undefined ? Number(body.waitMinutesPerGroup) : undefined,
       estimatedTableTimeMin: body.estimatedTableTimeMin !== undefined ? Number(body.estimatedTableTimeMin) : undefined,
+      useCalculatedAvgTime: body.useCalculatedAvgTime !== undefined ? Boolean(body.useCalculatedAvgTime) : undefined,
       msgWhatsappCall: body.msgWhatsappCall,
       msgWhatsappExpire: body.msgWhatsappExpire,
       msgWhatsappCallAgain: body.msgWhatsappCallAgain,
