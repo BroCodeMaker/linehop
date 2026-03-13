@@ -35,3 +35,5 @@ prisma/migrations/
 dist/
 build/
 .vercel
+.env.vercel
+.env.local
