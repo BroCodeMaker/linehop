@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { callNext } from "@/lib/queue";
 import { emitUpdate } from "@/lib/emitter";
 import { verifySession } from "@/lib/session";
 
@@ -20,7 +19,6 @@ export async function POST(
   try {
     const { id, entryId } = await context.params;
 
-    // Verify restaurant owns this entry
     const entry = await prisma.waitlistEntry.findFirst({
       where: { id: entryId, restaurantId: id },
     });
@@ -29,28 +27,32 @@ export async function POST(
       return NextResponse.json({ error: "Entry not found" }, { status: 404 });
     }
 
-    // Can skip from WAITING, CALLED, or CONFIRMED states
-    if (!["WAITING", "CALLED", "CONFIRMED"].includes(entry.status)) {
+    if (entry.status !== "SEATED") {
       return NextResponse.json(
-        { error: `Cannot skip from ${entry.status} state` },
+        { error: `Re-call only available for SEATED entries, current: ${entry.status}` },
         { status: 400 }
       );
     }
 
+    const now = new Date();
     const updated = await prisma.waitlistEntry.update({
       where: { id: entryId },
-      data: { status: "SKIPPED", skippedAt: new Date() },
+      data: {
+        status: "CALLED",
+        seatedAt: null,
+        calledAt: now,
+        confirmedAt: null,
+        confirmDeadlineAt: new Date(now.getTime() + 120 * 1000),
+        arrivalDeadlineAt: null,
+      },
     });
 
-    console.log(`[skip] Entry ${entryId} skipped (was ${entry.status}), calling next...`);
-
-    // Automatically call next after skip
-    await callNext(id);
+    console.log(`[re-call] Entry ${entryId} re-called from SEATED`);
     emitUpdate(id);
 
-    return NextResponse.json({ ok: true, entry: updated, message: "Next guest called" });
+    return NextResponse.json({ ok: true, entry: updated });
   } catch (err) {
-    console.error("[skip]", err);
+    console.error("[re-call]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

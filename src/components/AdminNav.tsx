@@ -13,6 +13,7 @@ export default function AdminNav({ restaurantId }: AdminNavProps) {
   const isDashboard = pathname?.includes("/dashboard");
   const isSettings = pathname?.includes("/settings");
   const isHistory = pathname?.includes("/history");
+  const isStatistics = pathname?.includes("/statistics");
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -61,6 +62,15 @@ export default function AdminNav({ restaurantId }: AdminNavProps) {
           }}
         >
           📋 Istoric
+        </button>
+        <button
+          onClick={() => router.push(`/app/${restaurantId}/statistics`)}
+          style={{
+            ...s.tab,
+            ...(isStatistics ? s.tabActive : {}),
+          }}
+        >
+          📊 Statistici
         </button>
       </div>
 

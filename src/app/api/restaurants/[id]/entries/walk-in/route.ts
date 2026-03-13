@@ -12,6 +12,7 @@ function isAuthed(req: NextRequest): boolean {
 
 const WalkInSchema = z.object({
   partySize: z.number().int().min(1).max(20),
+  notes: z.string().max(500).optional(),
 })
 
 export async function POST(
@@ -30,7 +31,7 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
     }
 
-    const { partySize } = parsed.data
+    const { partySize, notes } = parsed.data
     const now = new Date()
 
     const entry = await prisma.waitlistEntry.create({
@@ -43,6 +44,7 @@ export async function POST(
         status: 'SEATED',
         seatedAt: now,
         createdAt: now,
+        notes: notes || null,
       },
     })
 

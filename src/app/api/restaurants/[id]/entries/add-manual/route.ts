@@ -15,6 +15,7 @@ const ManualAddSchema = z.object({
   guestName: z.string().min(1),
   partySize: z.number().int().min(1).max(20),
   phoneE164: z.string().min(6).optional().or(z.literal('')),
+  notes: z.string().max(500).optional(),
 })
 
 export async function POST(
@@ -33,7 +34,7 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { guestName, partySize, phoneE164: rawPhone } = parsed.data
+    const { guestName, partySize, phoneE164: rawPhone, notes } = parsed.data
 
     const restaurant = await prisma.restaurant.findUnique({ where: { id } })
     if (!restaurant) {
@@ -51,6 +52,7 @@ export async function POST(
         guestName,
         status: 'WAITING',
         createdAt: new Date(),
+        notes: notes || null,
       },
     })
 

@@ -14,6 +14,7 @@ type Settings = {
   maxPartySize: number;
   maxQueueSize: number;
   waitMinutesPerGroup: number;
+  estimatedTableTimeMin: number;
   msgWhatsappCall: string;
   msgWhatsappExpire: string;
   msgWhatsappCallAgain: string;
@@ -29,6 +30,7 @@ export default function SettingsPage() {
     maxPartySize: 10,
     maxQueueSize: 50,
     waitMinutesPerGroup: 10,
+    estimatedTableTimeMin: 15,
     msgWhatsappCall: "Vă rugăm să vă prezentați la intrare în 2 minute.",
     msgWhatsappExpire: "Din păcate locul dumneavoastră a expirat.",
     msgWhatsappCallAgain: "Vă mai acordăm o șansă, vă rugăm să vă prezentați.",
@@ -36,6 +38,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [calculatedAvgMin, setCalculatedAvgMin] = useState<number | null>(null);
 
   useEffect(() => {
     fetch(`/api/restaurants/${restaurantId}/settings`)
@@ -44,6 +47,14 @@ export default function SettingsPage() {
         if (d.ok) setForm(d.settings);
       })
       .finally(() => setLoading(false));
+
+    // Fetch calculated avg wait time (all-time)
+    fetch(`/api/restaurants/${restaurantId}/statistics?period=all`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok && d.avgWaitMinutes != null) setCalculatedAvgMin(d.avgWaitMinutes);
+      })
+      .catch(() => {});
   }, [restaurantId]);
 
   async function handleSave(e: React.FormEvent) {
@@ -122,6 +133,35 @@ export default function SettingsPage() {
                   <label style={s.label}>Minute estimate per grup</label>
                   <p style={s.hint}>Timp estimat de așteptare per grup (minute). Afișat clienților.</p>
                   <input type="number" min={1} max={120} value={form.waitMinutesPerGroup} onChange={e => setNum("waitMinutesPerGroup", e.target.value)} style={s.input} required />
+                </div>
+              </div>
+            </div>
+
+            {/* Table turnover section */}
+            <div style={s.card}>
+              <div style={s.sectionTitle}>🪑 Timp ocupare masă</div>
+              <div style={s.field}>
+                <label style={s.label}>Timp estimat per masă (minute)</label>
+                <p style={s.hint}>Estimarea dumneavoastră manuală pentru cât timp stă un grup la masă</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <input
+                    type="number"
+                    min={1}
+                    max={300}
+                    value={form.estimatedTableTimeMin}
+                    onChange={e => setNum("estimatedTableTimeMin", e.target.value)}
+                    style={{ ...s.input, width: 100 }}
+                    required
+                  />
+                  {calculatedAvgMin != null ? (
+                    <span style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, background: "#f0fdf4", padding: "4px 10px", borderRadius: 8, border: "1px solid #bbf7d0" }}>
+                      ✅ calculat: {calculatedAvgMin} min
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 13, color: "#9ca3af" }}>
+                      (calculat: insuficient date)
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

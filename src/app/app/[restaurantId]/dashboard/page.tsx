@@ -12,9 +12,12 @@ type Entry = {
   phoneE164: string;
   guestName?: string;
   status: string;
+  notes?: string;
   createdAt: string;
   calledAt?: string;
   confirmedAt?: string;
+  seatedAt?: string;
+  skippedAt?: string;
   confirmDeadlineAt?: string;
   arrivalDeadlineAt?: string;
   expiredAt?: string;
@@ -41,6 +44,8 @@ function rowBg(status: string): string {
     case "WAITING":        return "#fff";
     case "NO_SHOW_CONFIRM":return "#fee2e2";
     case "NO_SHOW_ARRIVAL":return "#fff7ed";
+    case "SEATED":         return "#f0f9ff";
+    case "SKIPPED":        return "#fafafa";
     default:               return "#f9fafb";
   }
 }
@@ -53,6 +58,8 @@ function rowBorder(status: string): string {
     case "WAITING":         return "4px solid #e5e7eb";
     case "NO_SHOW_CONFIRM": return "4px solid #f87171";
     case "NO_SHOW_ARRIVAL": return "4px solid #fdba74";
+    case "SEATED":          return "4px solid #38bdf8";
+    case "SKIPPED":         return "4px solid #d1d5db";
     default:                return "4px solid #e5e7eb";
   }
 }
@@ -136,9 +143,10 @@ export default function DashboardPage() {
   const [changingStatus, setChangingStatus] = useState(false);
   const [sseConnected, setSseConnected] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
-  const [manualForm, setManualForm] = useState({ guestName: "", partySize: 2, phoneE164: "" });
+  const [manualForm, setManualForm] = useState({ guestName: "", partySize: 2, phoneE164: "", notes: "" });
   const [manualSubmitting, setManualSubmitting] = useState(false);
   const [showWalkIn, setShowWalkIn] = useState(false);
+  const [walkInNotes, setWalkInNotes] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{ guestName: string; partySize: number; phoneE164: string }>({ guestName: "", partySize: 2, phoneE164: "" });
   const [editSubmitting, setEditSubmitting] = useState(false);
@@ -278,7 +286,25 @@ export default function DashboardPage() {
   }
 
   async function handleAction(entryId: string, action: string) {
-    await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/${action}`, { method: "POST" });
+    const res = await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/${action}`, { method: "POST" });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setMessage({ text: `❌ ${d.error ?? "Eroare"}`, type: "info" });
+      setTimeout(() => setMessage(null), 3000);
+    }
+    await refreshAll();
+  }
+
+  async function handleUndo(entryId: string, action: "undo-seated" | "undo-skipped" | "re-call") {
+    const res = await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/${action}`, { method: "POST" });
+    const data = await res.json();
+    if (res.ok) {
+      const labels = { "undo-seated": "↩️ Undo seated", "undo-skipped": "↩️ Undo skipped", "re-call": "📲 Re-call trimis" };
+      setMessage({ text: `✅ ${labels[action]}`, type: "ok" });
+    } else {
+      setMessage({ text: `❌ ${data.error ?? "Eroare"}`, type: "info" });
+    }
+    setTimeout(() => setMessage(null), 3000);
     await refreshAll();
   }
 
@@ -298,11 +324,12 @@ export default function DashboardPage() {
           guestName: manualForm.guestName,
           partySize: manualForm.partySize,
           phoneE164: manualForm.phoneE164 || undefined,
+          notes: manualForm.notes || undefined,
         }),
       });
       if (res.ok) {
         setShowManualForm(false);
-        setManualForm({ guestName: "", partySize: 2, phoneE164: "" });
+        setManualForm({ guestName: "", partySize: 2, phoneE164: "", notes: "" });
         await refreshAll();
         setMessage({ text: "✅ Grup adăugat manual", type: "ok" });
         setTimeout(() => setMessage(null), 3000);
@@ -317,8 +344,9 @@ export default function DashboardPage() {
     await fetch(`/api/restaurants/${restaurantId}/entries/walk-in`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ partySize }),
+      body: JSON.stringify({ partySize, notes: walkInNotes || undefined }),
     });
+    setWalkInNotes("");
     await refreshAll();
     setMessage({ text: `✅ Walk-in ${partySize} pers. înregistrat`, type: "ok" });
     setTimeout(() => setMessage(null), 3000);
@@ -382,6 +410,10 @@ export default function DashboardPage() {
   const called = entries.filter(e => e.status === "CALLED").length;
   const confirmed = entries.filter(e => e.status === "CONFIRMED").length;
 
+  // Split entries into active queue and recent undo-able entries
+  const activeEntries = entries.filter(e => !["SEATED", "SKIPPED"].includes(e.status));
+  const recentEntries = entries.filter(e => ["SEATED", "SKIPPED"].includes(e.status));
+
   const statusCfg: Record<string, { label: string; active: string; icon: string }> = {
     OPEN:   { label: "Deschis",         active: "#16a34a", icon: "🟢" },
     FULL:   { label: "Plin / Waitlist", active: "#ea580c", icon: "🔴" },
@@ -420,7 +452,6 @@ export default function DashboardPage() {
           <div style={s.statusRow}>
             {(["OPEN", "FULL", "PAUSED", "CLOSED"] as RestStatus[]).map((st) => {
               const c = statusCfg[st];
-              // restStatus === null means still loading — no button highlighted
               const isActive = restStatus === st;
               return (
                 <button
@@ -469,14 +500,14 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats Bar (4 live metrics) */}
+        {/* Stats Bar (live metrics) */}
         <div style={s.statsRow}>
           <div style={{ ...s.statBox, background: "#fef3c7", color: "#92400e" }}>
             <span style={s.statLbl}>⏳ Waiting now</span>
             <span style={s.statNum}>{stats?.waitingNow ?? waiting}</span>
           </div>
           <div style={{ ...s.statBox, background: "#fed7aa", color: "#9a3412" }}>
-            <span style={s.statLbl}>⏱ Timp mediu</span>
+            <span style={s.statLbl}>🪑 Avg turnover</span>
             <span style={s.statNum}>
               {stats?.avgWaitMinutes != null ? `${stats.avgWaitMinutes}m` : "—"}
             </span>
@@ -551,6 +582,10 @@ export default function DashboardPage() {
                 <label style={s.formLabel}>Telefon (opțional)</label>
                 <input type="tel" value={manualForm.phoneE164} onChange={e => setManualForm(f => ({ ...f, phoneE164: e.target.value }))} placeholder="07xx xxx xxx" style={s.formInput} />
               </div>
+              <div style={{ ...s.formGroup, minWidth: 200 }}>
+                <label style={s.formLabel}>Notă (opțional)</label>
+                <input value={manualForm.notes} onChange={e => setManualForm(f => ({ ...f, notes: e.target.value }))} placeholder="ex: scaun înalt, terasă..." style={s.formInput} maxLength={500} />
+              </div>
               <button type="submit" disabled={manualSubmitting} style={s.submitBtn}>{manualSubmitting ? "..." : "Adaugă"}</button>
               <button type="button" onClick={() => setShowManualForm(false)} style={s.cancelBtn}>Anulează</button>
             </form>
@@ -561,6 +596,16 @@ export default function DashboardPage() {
         {showWalkIn && (
           <div style={s.manualForm}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 10 }}>🚶 Walk-in — Selectează numărul de persoane:</div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={s.formLabel}>Notă (opțional)</label>
+              <input
+                value={walkInNotes}
+                onChange={e => setWalkInNotes(e.target.value)}
+                placeholder="ex: terasă, aniversare..."
+                style={{ ...s.formInput, width: "100%", maxWidth: 320, marginTop: 4 }}
+                maxLength={500}
+              />
+            </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
               {[1,2,3,4,5,6,7,8,9,10].map(n => (
                 <button key={n} onClick={() => handleWalkIn(n)} style={{ padding: "10px 16px", background: "#3730a3", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 16, cursor: "pointer" }}>
@@ -609,136 +654,227 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Queue Table */}
+        {/* Active Queue */}
         {loading ? (
           <p style={s.muted}>Se încarcă coada...</p>
-        ) : entries.length === 0 ? (
+        ) : activeEntries.length === 0 && recentEntries.length === 0 ? (
           <div style={s.emptyState}><div style={{ fontSize: 48 }}>🎉</div><p>Coada este goală</p></div>
         ) : (
-          <div style={s.tableWrap}>
-            {entries.map((entry, i) => (
-              <div
-                key={entry.id}
-                style={{
-                  borderLeft: rowBorder(entry.status),
-                  background: rowBg(entry.status),
-                  borderBottom: "1px solid rgba(0,0,0,0.05)",
-                  padding: "12px 16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  flexWrap: "wrap" as const,
-                }}
-              >
-                {/* Position */}
-                <span style={{ fontSize: 13, color: "#9ca3af", fontWeight: 700, minWidth: 24 }}>#{i + 1}</span>
-
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 120 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>
-                    {entry.guestName ?? "—"} · {entry.partySize} pers.
-                  </div>
-                  <div style={{ display: "flex", gap: 8, marginTop: 2, alignItems: "center" }}>
-                    <span style={{ fontFamily: "monospace", fontSize: 11, background: "#f3f4f6", padding: "1px 5px", borderRadius: 4 }}>
-                      {entry.phoneE164}
-                    </span>
-                    <WaitingTime createdAt={entry.createdAt} />
-                  </div>
-                </div>
-
-                {/* Status + Countdown */}
-                <div style={{ minWidth: 130, textAlign: "center" as const }}>
-                  {entry.status === "NO_SHOW_CONFIRM" && (
-                    <>
-                      <span style={{ ...s.badge, background: "#fee2e2", color: "#991b1b" }}>⌛ Confirmation Timeout</span>
-                      {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
-                    </>
-                  )}
-                  {entry.status === "NO_SHOW_ARRIVAL" && (
-                    <>
-                      <span style={{ ...s.badge, background: "#ffedd5", color: "#9a3412" }}>⌛ Time to Seat Expired</span>
-                      {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
-                    </>
-                  )}
-                  {entry.status === "CALLED" && (
-                    <>
-                      <span style={{ ...s.badge, background: "#fed7aa", color: "#9a3412" }}>📲 CALLED</span>
-                      {entry.confirmDeadlineAt && (
-                        <div style={{ marginTop: 4 }}>
-                          <CountdownTimer deadline={entry.confirmDeadlineAt} totalSec={120} />
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {entry.status === "CONFIRMED" && (
-                    <>
-                      <span style={{ ...s.badge, background: "#bbf7d0", color: "#166534" }}>✅ CONFIRMED</span>
-                      {entry.arrivalDeadlineAt && (
-                        <div style={{ marginTop: 4 }}>
-                          <CountdownTimer deadline={entry.arrivalDeadlineAt} totalSec={300} />
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {entry.status === "WAITING" && (
-                    <span style={{ ...s.badge }}>⏳ WAITING</span>
-                  )}
-                  {!["NO_SHOW_CONFIRM","NO_SHOW_ARRIVAL","CALLED","CONFIRMED","WAITING"].includes(entry.status) && (
-                    <span style={s.badge}>{entry.status}</span>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const }}>
-                  {entry.status === "WAITING" && (
-                    <button onClick={() => handleAction(entry.id, "call")} style={{ ...s.actionBtn, background: "#ea580c" }}>
-                      📲 Cheamă
-                    </button>
-                  )}
-                  {["WAITING", "CALLED", "CONFIRMED"].includes(entry.status) && (
-                    <>
-                      <button onClick={() => handleAction(entry.id, "seat")} style={{ ...s.actionBtn, background: "#2563eb" }}>Seat</button>
-                      <button onClick={() => handleAction(entry.id, "skip")} style={{ ...s.actionBtn, background: "#9ca3af" }}>Skip</button>
-                    </>
-                  )}
-                  {["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(entry.status) && (entry.callAgainCount ?? 0) < 1 && (
-                    <button onClick={() => handleAction(entry.id, "call-again")} style={{ ...s.actionBtn, background: "#7c3aed" }}>
-                      🔄 Call Again
-                    </button>
-                  )}
-                  {["WAITING", "CALLED", "CONFIRMED", "NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(entry.status) && (
-                    <button onClick={() => startEdit(entry)} style={{ ...s.actionBtn, background: "#6b7280" }}>
-                      ✏️ Edit
-                    </button>
-                  )}
-                </div>
-                {editingId === entry.id && (
-                  <div style={{ width: "100%", background: "#f9fafb", borderTop: "1px solid #e5e7eb", padding: "12px 16px", display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "flex-end", marginTop: 8 }}>
-                    <div style={s.formGroup}>
-                      <label style={s.formLabel}>Nume</label>
-                      <input value={editForm.guestName} onChange={e => setEditForm(f => ({ ...f, guestName: e.target.value }))} style={s.formInput} placeholder="Nume" />
-                    </div>
-                    <div style={s.formGroup}>
-                      <label style={s.formLabel}>Persoane</label>
-                      <input type="number" min={1} max={20} value={editForm.partySize} onChange={e => setEditForm(f => ({ ...f, partySize: Number(e.target.value) }))} style={{ ...s.formInput, width: 70 }} />
-                    </div>
-                    <div style={s.formGroup}>
-                      <label style={s.formLabel}>Telefon</label>
-                      <input value={editForm.phoneE164} onChange={e => setEditForm(f => ({ ...f, phoneE164: e.target.value }))} style={s.formInput} placeholder="+40..." />
-                    </div>
-                    <button onClick={() => handleEditSave(entry.id)} disabled={editSubmitting} style={s.submitBtn}>{editSubmitting ? "..." : "Salvează"}</button>
-                    <button onClick={() => setEditingId(null)} style={s.cancelBtn}>Anulează</button>
-                  </div>
-                )}
+          <>
+            {activeEntries.length > 0 && (
+              <div style={s.tableWrap}>
+                {activeEntries.map((entry, i) => (
+                  <EntryRow
+                    key={entry.id}
+                    entry={entry}
+                    index={i}
+                    editingId={editingId}
+                    editForm={editForm}
+                    editSubmitting={editSubmitting}
+                    onAction={handleAction}
+                    onUndo={handleUndo}
+                    onStartEdit={startEdit}
+                    onEditChange={setEditForm}
+                    onEditSave={handleEditSave}
+                    onEditCancel={() => setEditingId(null)}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+
+            {/* Recent Undo Section */}
+            {recentEntries.length > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                  ↩️ Acțiuni recente (undo disponibil)
+                </div>
+                <div style={{ ...s.tableWrap, opacity: 0.85 }}>
+                  {recentEntries.map((entry, i) => (
+                    <EntryRow
+                      key={entry.id}
+                      entry={entry}
+                      index={i}
+                      editingId={editingId}
+                      editForm={editForm}
+                      editSubmitting={editSubmitting}
+                      onAction={handleAction}
+                      onUndo={handleUndo}
+                      onStartEdit={startEdit}
+                      onEditChange={setEditForm}
+                      onEditSave={handleEditSave}
+                      onEditCancel={() => setEditingId(null)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         <p style={s.refresh}>
           {sseConnected ? "🟢 Live updates active" : "🔴 Reconnecting... (polling la 15s)"}
         </p>
       </div>
+    </div>
+  );
+}
+
+type EntryRowProps = {
+  entry: Entry;
+  index: number;
+  editingId: string | null;
+  editForm: { guestName: string; partySize: number; phoneE164: string };
+  editSubmitting: boolean;
+  onAction: (id: string, action: string) => void;
+  onUndo: (id: string, action: "undo-seated" | "undo-skipped" | "re-call") => void;
+  onStartEdit: (entry: Entry) => void;
+  onEditChange: (form: { guestName: string; partySize: number; phoneE164: string }) => void;
+  onEditSave: (id: string) => void;
+  onEditCancel: () => void;
+};
+
+function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction, onUndo, onStartEdit, onEditChange, onEditSave, onEditCancel }: EntryRowProps) {
+  return (
+    <div
+      style={{
+        borderLeft: rowBorder(entry.status),
+        background: rowBg(entry.status),
+        borderBottom: "1px solid rgba(0,0,0,0.05)",
+        padding: "12px 16px",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        flexWrap: "wrap" as const,
+      }}
+    >
+      {/* Position */}
+      <span style={{ fontSize: 13, color: "#9ca3af", fontWeight: 700, minWidth: 24 }}>#{index + 1}</span>
+
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 120 }}>
+        <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>
+          {entry.guestName ?? "—"} · {entry.partySize} pers.
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 2, alignItems: "center" }}>
+          <span style={{ fontFamily: "monospace", fontSize: 11, background: "#f3f4f6", padding: "1px 5px", borderRadius: 4 }}>
+            {entry.phoneE164}
+          </span>
+          <WaitingTime createdAt={entry.createdAt} />
+        </div>
+        {entry.notes && (
+          <div style={{ fontSize: 12, color: "#6b7280", fontStyle: "italic", marginTop: 3 }}>
+            📝 {entry.notes}
+          </div>
+        )}
+      </div>
+
+      {/* Status + Countdown */}
+      <div style={{ minWidth: 130, textAlign: "center" as const }}>
+        {entry.status === "NO_SHOW_CONFIRM" && (
+          <>
+            <span style={{ ...s.badge, background: "#fee2e2", color: "#991b1b" }}>⌛ Confirmation Timeout</span>
+            {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
+          </>
+        )}
+        {entry.status === "NO_SHOW_ARRIVAL" && (
+          <>
+            <span style={{ ...s.badge, background: "#ffedd5", color: "#9a3412" }}>⌛ Time to Seat Expired</span>
+            {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
+          </>
+        )}
+        {entry.status === "CALLED" && (
+          <>
+            <span style={{ ...s.badge, background: "#fed7aa", color: "#9a3412" }}>📲 CALLED</span>
+            {entry.confirmDeadlineAt && (
+              <div style={{ marginTop: 4 }}>
+                <CountdownTimer deadline={entry.confirmDeadlineAt} totalSec={120} />
+              </div>
+            )}
+          </>
+        )}
+        {entry.status === "CONFIRMED" && (
+          <>
+            <span style={{ ...s.badge, background: "#bbf7d0", color: "#166534" }}>✅ CONFIRMED</span>
+            {entry.arrivalDeadlineAt && (
+              <div style={{ marginTop: 4 }}>
+                <CountdownTimer deadline={entry.arrivalDeadlineAt} totalSec={300} />
+              </div>
+            )}
+          </>
+        )}
+        {entry.status === "WAITING" && (
+          <span style={{ ...s.badge }}>⏳ WAITING</span>
+        )}
+        {entry.status === "SEATED" && (
+          <span style={{ ...s.badge, background: "#e0f2fe", color: "#0369a1" }}>🪑 SEATED</span>
+        )}
+        {entry.status === "SKIPPED" && (
+          <span style={{ ...s.badge, background: "#f3f4f6", color: "#6b7280" }}>⏭ SKIPPED</span>
+        )}
+        {!["NO_SHOW_CONFIRM","NO_SHOW_ARRIVAL","CALLED","CONFIRMED","WAITING","SEATED","SKIPPED"].includes(entry.status) && (
+          <span style={s.badge}>{entry.status}</span>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const }}>
+        {entry.status === "WAITING" && (
+          <button onClick={() => onAction(entry.id, "call")} style={{ ...s.actionBtn, background: "#ea580c" }}>
+            📲 Cheamă
+          </button>
+        )}
+        {["WAITING", "CALLED", "CONFIRMED"].includes(entry.status) && (
+          <>
+            <button onClick={() => onAction(entry.id, "seat")} style={{ ...s.actionBtn, background: "#2563eb" }}>Seat</button>
+            <button onClick={() => onAction(entry.id, "skip")} style={{ ...s.actionBtn, background: "#9ca3af" }}>Skip</button>
+          </>
+        )}
+        {["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(entry.status) && (entry.callAgainCount ?? 0) < 1 && (
+          <button onClick={() => onAction(entry.id, "call-again")} style={{ ...s.actionBtn, background: "#7c3aed" }}>
+            🔄 Call Again
+          </button>
+        )}
+        {/* Undo buttons for SEATED */}
+        {entry.status === "SEATED" && (
+          <>
+            <button onClick={() => onUndo(entry.id, "undo-seated")} style={{ ...s.actionBtn, background: "#0891b2" }}>
+              ↩️ Undo Seat
+            </button>
+            <button onClick={() => onUndo(entry.id, "re-call")} style={{ ...s.actionBtn, background: "#7c3aed" }}>
+              📲 Re-call
+            </button>
+          </>
+        )}
+        {/* Undo button for SKIPPED */}
+        {entry.status === "SKIPPED" && (
+          <button onClick={() => onUndo(entry.id, "undo-skipped")} style={{ ...s.actionBtn, background: "#0891b2" }}>
+            ↩️ Undo Skip
+          </button>
+        )}
+        {["WAITING", "CALLED", "CONFIRMED", "NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(entry.status) && (
+          <button onClick={() => onStartEdit(entry)} style={{ ...s.actionBtn, background: "#6b7280" }}>
+            ✏️ Edit
+          </button>
+        )}
+      </div>
+      {editingId === entry.id && (
+        <div style={{ width: "100%", background: "#f9fafb", borderTop: "1px solid #e5e7eb", padding: "12px 16px", display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "flex-end", marginTop: 8 }}>
+          <div style={s.formGroup}>
+            <label style={s.formLabel}>Nume</label>
+            <input value={editForm.guestName} onChange={e => onEditChange({ ...editForm, guestName: e.target.value })} style={s.formInput} placeholder="Nume" />
+          </div>
+          <div style={s.formGroup}>
+            <label style={s.formLabel}>Persoane</label>
+            <input type="number" min={1} max={20} value={editForm.partySize} onChange={e => onEditChange({ ...editForm, partySize: Number(e.target.value) })} style={{ ...s.formInput, width: 70 }} />
+          </div>
+          <div style={s.formGroup}>
+            <label style={s.formLabel}>Telefon</label>
+            <input value={editForm.phoneE164} onChange={e => onEditChange({ ...editForm, phoneE164: e.target.value })} style={s.formInput} placeholder="+40..." />
+          </div>
+          <button onClick={() => onEditSave(entry.id)} disabled={editSubmitting} style={s.submitBtn}>{editSubmitting ? "..." : "Salvează"}</button>
+          <button onClick={onEditCancel} style={s.cancelBtn}>Anulează</button>
+        </div>
+      )}
     </div>
   );
 }

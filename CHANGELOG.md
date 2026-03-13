@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0] - 2026-03-13
+### Added
+- **Undo actions**: Undo Seated, Undo Skipped, Re-call for recent entries (last 30 min visible in dashboard)
+- **Fix**: Skip button now also works for WAITING entries (previously only CALLED/CONFIRMED)
+- **New API routes**: POST undo-seated, undo-skipped, re-call (all authenticated)
+- **Notes field**: Optional notes on manual add and walk-in entries (e.g. "high chair needed", "terrace preference")
+- **Notes display**: Notes shown in dashboard entry cards (italic, gray)
+- **Avg table turnover**: Dashboard "Avg turnover" stat (join → seated, walk-ins excluded)
+- **Estimated table time**: Settings page — manual estimate field with dynamically calculated value shown alongside
+- **Statistics page**: New tab in nav with metrics filterable by today/week/month/all-time
+  - Guests joined, confirmed, no-shows, avg wait time
+  - Groups called from list, added manually, walk-ins
+  - Groups seated, total people seated
+
 ## [1.0.2] - 2026-03-13
 ### Fixed
 - SECURITY: Added authentication to 9 unprotected API routes (status, call-next, reset-test, add-manual, walk-in, call, seat, skip, call-again)

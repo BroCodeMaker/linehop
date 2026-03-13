@@ -37,14 +37,18 @@ async function sendCallNotification(entry: {
 
 export async function getQueue(restaurantId: string) {
   const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000)
+  const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000)
   return prisma.waitlistEntry.findMany({
     where: {
       restaurantId,
       OR: [
         { status: { in: ['WAITING', 'CALLED', 'CONFIRMED'] } },
-        // Keep NO_SHOW_CONFIRM/NO_SHOW_ARRIVAL visible for 10 min buffer (Feature 2)
+        // Keep NO_SHOW_CONFIRM/NO_SHOW_ARRIVAL visible for 10 min buffer
         { status: 'NO_SHOW_CONFIRM', expiredAt: { gte: tenMinAgo } },
         { status: 'NO_SHOW_ARRIVAL', expiredAt: { gte: tenMinAgo } },
+        // Recent SEATED/SKIPPED for undo (last 30 min)
+        { status: 'SEATED', seatedAt: { gte: thirtyMinAgo } },
+        { status: 'SKIPPED', skippedAt: { gte: thirtyMinAgo } },
       ],
     },
     orderBy: { createdAt: 'asc' },

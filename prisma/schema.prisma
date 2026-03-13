@@ -21,20 +21,21 @@ model Restaurant {
 }
 
 model RestaurantSettings {
-  id                   String     @id @default(uuid())
-  restaurantId         String     @unique
-  confirmTimerSec      Int        @default(120)
-  arrivalTimerSec      Int        @default(300)
-  bufferVisibilitySec  Int        @default(600)
-  maxCallAgain         Int        @default(1)
-  maxPartySize         Int        @default(10)
-  maxQueueSize         Int        @default(50)
-  waitMinutesPerGroup  Int        @default(10)
-  msgWhatsappCall      String     @default("Vă rugăm să vă prezentați la intrare în 2 minute.")
-  msgWhatsappExpire    String     @default("Din păcate locul dumneavoastră a expirat.")
-  msgWhatsappCallAgain String     @default("Vă mai acordăm o șansă, vă rugăm să vă prezentați.")
-  updatedAt            DateTime   @updatedAt
-  restaurant           Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  id                    String     @id @default(uuid())
+  restaurantId          String     @unique
+  confirmTimerSec       Int        @default(120)
+  arrivalTimerSec       Int        @default(300)
+  bufferVisibilitySec   Int        @default(600)
+  maxCallAgain          Int        @default(1)
+  maxPartySize          Int        @default(10)
+  maxQueueSize          Int        @default(50)
+  waitMinutesPerGroup   Int        @default(10)
+  estimatedTableTimeMin Int        @default(15)
+  msgWhatsappCall       String     @default("Vă rugăm să vă prezentați la intrare în 2 minute.")
+  msgWhatsappExpire     String     @default("Din păcate locul dumneavoastră a expirat.")
+  msgWhatsappCallAgain  String     @default("Vă mai acordăm o șansă, vă rugăm să vă prezentați.")
+  updatedAt             DateTime   @updatedAt
+  restaurant            Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }
 
 model RestaurantUser {
@@ -69,6 +70,7 @@ model WaitlistEntry {
   confirmDeadlineAt DateTime?
   arrivalDeadlineAt DateTime?
   callAgainCount    Int            @default(0)
+  notes             String?
   messageEvents     MessageEvent[]
   restaurant        Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
