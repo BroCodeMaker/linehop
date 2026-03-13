@@ -734,11 +734,12 @@ type EntryRowProps = {
 };
 
 function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction, onUndo, onStartEdit, onEditChange, onEditSave, onEditCancel }: EntryRowProps) {
+  const isLongWait = entry.status === "WAITING" && Date.now() - new Date(entry.createdAt).getTime() > 30 * 60 * 1000;
   return (
     <div
       style={{
-        borderLeft: rowBorder(entry.status),
-        background: rowBg(entry.status),
+        borderLeft: isLongWait ? "4px solid #fb923c" : rowBorder(entry.status),
+        background: isLongWait ? "#fff7ed" : rowBg(entry.status),
         borderBottom: "1px solid rgba(0,0,0,0.05)",
         padding: "12px 16px",
         display: "flex",
@@ -803,7 +804,14 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
           </>
         )}
         {entry.status === "WAITING" && (
-          <span style={{ ...s.badge }}>⏳ WAITING</span>
+          <>
+            <span style={{ ...s.badge }}>⏳ WAITING</span>
+            {isLongWait && (
+              <div style={{ marginTop: 4 }}>
+                <span style={{ ...s.badge, background: "#fed7aa", color: "#9a3412" }}>🕐 Asteptare lunga</span>
+              </div>
+            )}
+          </>
         )}
         {entry.status === "SEATED" && (
           <span style={{ ...s.badge, background: "#e0f2fe", color: "#0369a1" }}>🪑 SEATED</span>

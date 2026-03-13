@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.2] - 2026-03-13
+### Added
+- Orange highlight (border + background) for WAITING entries that have been waiting more than 30 minutes
+- "🕐 Asteptare lunga" badge displayed on long-wait WAITING entries in dashboard
+
 ## [1.2.1] - 2026-03-13
 ### Added
 - Note field ('Notă (opțional)') on public join form — saved to entry notes
