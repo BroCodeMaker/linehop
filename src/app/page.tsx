@@ -2,206 +2,266 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div style={{ minHeight: "100vh", fontFamily: "system-ui, -apple-system, sans-serif", background: "linear-gradient(135deg, #fff7ed 0%, #ffffff 50%, #fefce8 100%)", margin: 0 }}>
+    <div className="min-h-screen bg-white font-sans text-gray-900 antialiased">
       {/* Navbar */}
-      <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 32px", maxWidth: 1100, margin: "0 auto" }}>
-        <span style={{ fontSize: 22, fontWeight: 900, color: "#f97316", letterSpacing: "-0.02em" }}>LineHop</span>
-        <Link
-          href="/app/login"
-          style={{ background: "#111827", color: "#fff", fontWeight: 700, fontSize: 14, padding: "10px 24px", borderRadius: 10, textDecoration: "none" }}
-        >
-          Login
-        </Link>
-      </nav>
-
-      {/* Hero */}
-      <section style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "56px 24px 48px" }}>
-        <div style={{ fontSize: 72, marginBottom: 20 }}>🍽️</div>
-        <h1 style={{ fontSize: "clamp(32px, 5.5vw, 60px)", fontWeight: 900, color: "#111827", lineHeight: 1.1, marginBottom: 16, letterSpacing: "-0.03em", maxWidth: 780 }}>
-          Nu mai pierde clienți când
-          <br />
-          <span style={{ color: "#f97316" }}>restaurantul este plin.</span>
-        </h1>
-        <p style={{ fontSize: "clamp(16px, 2vw, 20px)", color: "#6b7280", maxWidth: 560, marginBottom: 40, lineHeight: 1.65 }}>
-          LineHop permite clienților să intre în lista de așteptare prin scanarea unui QR și îi anunță pe WhatsApp când masa este gata.
-        </p>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <span className="text-2xl font-black text-orange-500 tracking-tight">LineHop</span>
           <Link
             href="/app/login"
-            style={{
-              display: "inline-block",
-              background: "linear-gradient(135deg, #f97316, #ea580c)",
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: 17,
-              padding: "16px 40px",
-              borderRadius: 16,
-              textDecoration: "none",
-              boxShadow: "0 8px 32px rgba(249,115,22,0.35)",
-            }}
+            className="bg-gray-900 text-white font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-gray-800 transition-colors"
           >
-            Testează LineHop gratuit →
+            Login
           </Link>
+        </div>
+      </nav>
+
+      {/* SECTION 1 — HERO */}
+      <section className="max-w-4xl mx-auto px-6 py-24 text-center">
+        <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-600 text-sm font-semibold px-4 py-2 rounded-full mb-8">
+          🍽️ Lista de așteptare digitală pentru restaurante
+        </div>
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-900 leading-tight tracking-tight mb-6">
+          Restaurantul este plin?{" "}
+          <span className="text-orange-500">Nu mai pierde clienți care pleacă.</span>
+        </h1>
+        <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed mb-10">
+          Clienții scanează QR-ul și intră în lista de așteptare. Îi anunți pe WhatsApp când masa este gata.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="mailto:contact@linehop.ro"
-            style={{
-              display: "inline-block",
-              background: "#fff",
-              color: "#111827",
-              fontWeight: 700,
-              fontSize: 17,
-              padding: "16px 40px",
-              borderRadius: 16,
-              textDecoration: "none",
-              border: "2px solid #e5e7eb",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-            }}
+            className="inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-lg shadow-orange-200 transition-colors"
           >
-            Programează un demo
+            Programează demo →
           </a>
+          <Link
+            href="/app/login"
+            className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 font-bold text-lg px-8 py-4 rounded-2xl border-2 border-gray-200 hover:border-gray-300 transition-colors"
+          >
+            Intră în dashboard
+          </Link>
         </div>
       </section>
 
-      {/* How it works */}
-      <section style={{ padding: "0 24px 80px", maxWidth: 1000, margin: "0 auto" }}>
-        <h2 style={{ fontSize: "clamp(22px, 3.5vw, 32px)", fontWeight: 800, textAlign: "center", color: "#1f2937", marginBottom: 40 }}>
-          Cum funcționează?
-        </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
-          <div style={card("#fff7ed", "#fed7aa")}>
-            <div style={{ fontSize: 48, marginBottom: 8 }}>📱</div>
-            <div style={stepBadge("#ffedd5", "#c2410c")}>Pasul 1</div>
-            <h3 style={cardTitle}>Scanezi QR</h3>
-            <p style={cardDesc}>Scanezi codul QR de la intrarea restaurantului și te înscrii în coadă direct de pe telefon.</p>
+      {/* SECTION 2 — CUM FUNCȚIONEAZĂ */}
+      <section className="bg-gray-50 py-24">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl sm:text-4xl font-black text-center text-gray-900 mb-4">
+            Cum funcționează?
+          </h2>
+          <p className="text-center text-gray-500 mb-14 text-lg">Simplu, rapid, fără aplicație instalată.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Step 1 */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-3xl">
+                📷
+              </div>
+              <span className="bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full">Pasul 1</span>
+              <h3 className="text-xl font-bold text-gray-900">Scanezi QR</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Scanezi codul QR de la intrarea restaurantului și te înscrii în coadă direct de pe telefon.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-3xl">
+                📊
+              </div>
+              <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">Pasul 2</span>
+              <h3 className="text-xl font-bold text-gray-900">Primești actualizări</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Vezi poziția în coadă și timpul estimat de așteptare.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center text-3xl">
+                🔔
+              </div>
+              <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">Pasul 3</span>
+              <h3 className="text-xl font-bold text-gray-900">Vii când ești chemat</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Primești notificare WhatsApp când masa este aproape gata și confirmi că ești pe drum.
+              </p>
+            </div>
           </div>
-          <div style={card("#eff6ff", "#bfdbfe")}>
-            <div style={{ fontSize: 48, marginBottom: 8 }}>💬</div>
-            <div style={stepBadge("#dbeafe", "#1d4ed8")}>Pasul 2</div>
-            <h3 style={cardTitle}>Primești notificare</h3>
-            <p style={cardDesc}>Când îți vine rândul, primești un mesaj WhatsApp. Te poți plimba liber — nu mai aștepți la ușă.</p>
+          <p className="text-center text-gray-400 italic mt-10 text-base">
+            Mai puțin haos la intrare. Clienți mai relaxați.
+          </p>
+        </div>
+      </section>
+
+      {/* SECTION 3 — BENEFICII RESTAURANT */}
+      <section className="py-24">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-3xl sm:text-4xl font-black text-center text-gray-900 mb-14">
+            Beneficii pentru restaurant
+          </h2>
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-10 flex flex-col gap-5">
+            {[
+              "Crește gradul de ocupare la mese — mesele libere sunt ocupate mai rapid de grupuri potrivite",
+              "Clienții văd poziția în coadă și timpul estimat — mai puține întrebări la intrare",
+              "Listă de așteptare clară și automată",
+              "Hostess-ul nu mai gestionează manual coada",
+              "Mai puțin haos la intrare",
+            ].map((item) => (
+              <div key={item} className="flex items-start gap-4">
+                <span className="text-xl mt-0.5 flex-shrink-0">✅</span>
+                <span className="text-gray-700 text-base leading-relaxed">{item}</span>
+              </div>
+            ))}
           </div>
-          <div style={card("#f0fdf4", "#bbf7d0")}>
-            <div style={{ fontSize: 48, marginBottom: 8 }}>🪑</div>
-            <div style={stepBadge("#dcfce7", "#15803d")}>Pasul 3</div>
-            <h3 style={cardTitle}>Vii când ești chemat</h3>
-            <p style={cardDesc}>Confirmi că ești pe drum și ajungi la restaurant — masa ta te așteaptă. Simplu, fără stres.</p>
+          <p className="text-center text-gray-400 mt-8 text-base">
+            Mai puțin stres la intrare și mese ocupate mai eficient.
+          </p>
+        </div>
+      </section>
+
+      {/* SECTION 4 — BENEFICII CLIENȚI */}
+      <section className="bg-gray-50 py-24">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-3xl sm:text-4xl font-black text-center text-gray-900 mb-14">
+            Experiență mai bună pentru clienți
+          </h2>
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-10 flex flex-col gap-5">
+            {[
+              ["🚶", "Nu mai stau la coadă la ușă"],
+              ["🗺️", "Pot merge la plimbare până vine masa"],
+              ["📊", "Văd poziția în listă în timp real"],
+              ["📱", "Primesc notificare WhatsApp când masa este gata"],
+            ].map(([icon, text]) => (
+              <div key={text} className="flex items-start gap-4">
+                <span className="text-xl mt-0.5 flex-shrink-0">{icon}</span>
+                <span className="text-gray-700 text-base leading-relaxed">{text}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-gray-400 mt-8 text-base">
+            Clienții așteaptă mai puțin și sunt mai relaxați.
+          </p>
+        </div>
+      </section>
+
+      {/* SECTION 5 — DEMO VIZUAL */}
+      <section className="py-24">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl sm:text-4xl font-black text-center text-gray-900 mb-14">
+            Cum arată în practică
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+            {/* Dashboard mockup */}
+            <div className="flex flex-col gap-4">
+              <h3 className="text-lg font-bold text-gray-700 text-center">
+                Așa vede restaurantul lista de așteptare
+              </h3>
+              <div className="bg-gray-100 rounded-3xl shadow-md border border-gray-200 p-8 min-h-64 flex flex-col gap-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-bold text-gray-500 uppercase tracking-wide">Dashboard LineHop</span>
+                  <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">OPEN</span>
+                </div>
+                {[
+                  { name: "Andrei P.", time: "18 min", pos: 1, status: "CALLED" },
+                  { name: "Maria I.", time: "32 min", pos: 2, status: "WAITING" },
+                  { name: "Radu C.", time: "12 min", pos: 3, status: "WAITING" },
+                ].map((entry) => (
+                  <div key={entry.name} className="bg-white rounded-xl px-4 py-3 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <span className="w-7 h-7 bg-orange-100 text-orange-600 text-xs font-bold rounded-full flex items-center justify-center">
+                        {entry.pos}
+                      </span>
+                      <span className="text-sm font-semibold text-gray-800">{entry.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">{entry.time}</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        entry.status === "CALLED"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-gray-100 text-gray-600"
+                      }`}>
+                        {entry.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Phone mockup */}
+            <div className="flex flex-col gap-4">
+              <h3 className="text-lg font-bold text-gray-700 text-center">
+                Așa vede clientul poziția în coadă și timpul estimat
+              </h3>
+              <div className="mx-auto w-56 bg-gray-900 rounded-[2.5rem] p-3 shadow-2xl">
+                <div className="bg-white rounded-[2rem] overflow-hidden">
+                  <div className="bg-orange-500 px-4 pt-6 pb-5 text-center">
+                    <p className="text-white text-xs font-semibold opacity-80 mb-1">LineHop</p>
+                    <p className="text-white text-lg font-black">Restaurant Bella</p>
+                  </div>
+                  <div className="px-4 py-5 flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                      <span className="text-3xl font-black text-orange-500">2</span>
+                    </div>
+                    <p className="text-xs text-gray-500 text-center leading-snug">Ești pe locul 2 în coadă</p>
+                    <div className="bg-gray-50 rounded-xl px-4 py-3 text-center w-full">
+                      <p className="text-xs text-gray-400">Timp estimat</p>
+                      <p className="text-xl font-black text-gray-900">~15 min</p>
+                    </div>
+                    <p className="text-xs text-gray-400 text-center leading-snug">
+                      Te anunțăm pe WhatsApp când masa este gata
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Benefits */}
-      <section style={{ padding: "0 24px 80px", maxWidth: 1000, margin: "0 auto" }}>
-        <h2 style={{ fontSize: "clamp(22px, 3.5vw, 32px)", fontWeight: 800, textAlign: "center", color: "#1f2937", marginBottom: 40 }}>
-          Beneficii
-        </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
-          {/* Restaurant */}
-          <div style={{ background: "#fff", border: "2px solid #fed7aa", borderRadius: 24, padding: "32px 28px" }}>
-            <div style={{ fontSize: 28, marginBottom: 12 }}>🏪</div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#111827", marginBottom: 20 }}>Pentru restaurant</h3>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-              {[
-                "Mai puțini clienți pierduți",
-                "Mai puțin haos la intrare",
-                "Clienții știu timpul estimat",
-                "Lista gestionată automat",
-              ].map((item) => (
-                <li key={item} style={{ display: "flex", alignItems: "flex-start", gap: 10, color: "#374151", fontSize: 15, lineHeight: 1.5 }}>
-                  <span style={{ color: "#22c55e", fontWeight: 700, marginTop: 1 }}>✅</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Clients */}
-          <div style={{ background: "#fff", border: "2px solid #bfdbfe", borderRadius: 24, padding: "32px 28px" }}>
-            <div style={{ fontSize: 28, marginBottom: 12 }}>👤</div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#111827", marginBottom: 20 }}>Pentru clienți</h3>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-              {[
-                ["📱", "Nu mai așteaptă la ușă"],
-                ["🚶", "Pot merge la plimbare"],
-                ["🔔", "Primesc notificare WhatsApp când masa e gata"],
-              ].map(([icon, text]) => (
-                <li key={text} style={{ display: "flex", alignItems: "flex-start", gap: 10, color: "#374151", fontSize: 15, lineHeight: 1.5 }}>
-                  <span style={{ fontSize: 18, marginTop: -1 }}>{icon}</span>
-                  {text}
-                </li>
-              ))}
-            </ul>
-          </div>
+      {/* SECTION 6 — CTA FINAL */}
+      <section className="bg-orange-500 py-24">
+        <div className="max-w-2xl mx-auto px-6 text-center">
+          <h2 className="text-3xl sm:text-4xl font-black text-white mb-4 leading-tight">
+            Vrei să testezi LineHop în restaurantul tău?
+          </h2>
+          <p className="text-orange-100 text-xl mb-10">Primele 30 zile gratuit.</p>
+          <Link
+            href="/app/login"
+            className="inline-flex items-center justify-center gap-2 bg-white text-orange-600 font-black text-lg px-10 py-4 rounded-2xl shadow-lg hover:bg-orange-50 transition-colors"
+          >
+            Încearcă LineHop gratuit →
+          </Link>
         </div>
       </section>
 
-      {/* Contact */}
-      <section style={{ padding: "0 24px 80px", maxWidth: 600, margin: "0 auto", textAlign: "center" }}>
-        <div style={{ background: "#fff", border: "2px solid #e5e7eb", borderRadius: 24, padding: "40px 32px" }}>
-          <h2 style={{ fontSize: "clamp(20px, 3vw, 28px)", fontWeight: 800, color: "#111827", marginBottom: 8 }}>Contact LineHop</h2>
-          <p style={{ color: "#9ca3af", fontSize: 14, marginBottom: 28 }}>Suntem aici să te ajutăm.</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
+      {/* SECTION 7 — CONTACT */}
+      <section className="py-24">
+        <div className="max-w-lg mx-auto px-6 text-center">
+          <h2 className="text-3xl font-black text-gray-900 mb-3">Contact LineHop</h2>
+          <p className="text-gray-500 text-lg mb-10">Suntem aici să te ajutăm.</p>
+          <div className="bg-white border border-gray-100 rounded-3xl shadow-sm p-10 flex flex-col items-center gap-6">
             <a
               href="tel:0750198891"
-              style={{ display: "flex", alignItems: "center", gap: 10, color: "#111827", textDecoration: "none", fontSize: 17, fontWeight: 600 }}
+              className="flex items-center gap-3 text-gray-900 font-semibold text-lg hover:text-orange-500 transition-colors"
             >
-              <span style={{ fontSize: 22 }}>📞</span> 0750 198 891
+              <span className="text-2xl">📞</span> 0750 198 891
             </a>
             <a
               href="mailto:contact@linehop.ro"
-              style={{ display: "flex", alignItems: "center", gap: 10, color: "#f97316", textDecoration: "none", fontSize: 17, fontWeight: 600 }}
+              className="flex items-center gap-3 text-orange-500 font-semibold text-lg hover:text-orange-600 transition-colors"
             >
-              <span style={{ fontSize: 22 }}>✉️</span> contact@linehop.ro
+              <span className="text-2xl">✉️</span> contact@linehop.ro
             </a>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer style={{ borderTop: "1px solid #f3f4f6", textAlign: "center", padding: "24px 16px", color: "#9ca3af", fontSize: 13 }}>
-        © {new Date().getFullYear()} LineHop · Restaurant Waitlist Management
-        <span style={{ margin: "0 8px" }}>·</span>
-        <Link href="/app/login" style={{ color: "#f97316", textDecoration: "none", fontWeight: 600 }}>Dashboard</Link>
+      {/* SECTION 8 — FOOTER */}
+      <footer className="border-t border-gray-100 py-6 text-center text-gray-400 text-sm">
+        © 2026 LineHop · contact@linehop.ro
       </footer>
     </div>
   );
 }
-
-function card(bg: string, border: string): React.CSSProperties {
-  return {
-    background: bg,
-    border: `2px solid ${border}`,
-    borderRadius: 24,
-    padding: "32px 28px",
-    textAlign: "center",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 10,
-  };
-}
-
-function stepBadge(bg: string, color: string): React.CSSProperties {
-  return {
-    background: bg,
-    color,
-    fontWeight: 700,
-    fontSize: 12,
-    borderRadius: 9999,
-    padding: "4px 14px",
-    display: "inline-block",
-  };
-}
-
-const cardTitle: React.CSSProperties = {
-  fontSize: 20,
-  fontWeight: 800,
-  color: "#111827",
-  margin: 0,
-};
-
-const cardDesc: React.CSSProperties = {
-  color: "#6b7280",
-  fontSize: 14,
-  lineHeight: 1.6,
-  margin: 0,
-};

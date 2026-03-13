@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.3] - 2026-03-13
+### Changed
+- Full landing page redesign with structured sections: Hero, Cum funcționează, Beneficii restaurant, Beneficii clienți, Demo vizual, CTA final, Contact, Footer
+- Clean modern airy design with Tailwind CSS, sticky navbar, responsive layout
+
 ## [1.2.2] - 2026-03-13
 ### Added
 - Orange highlight (border + background) for WAITING entries that have been waiting more than 30 minutes
