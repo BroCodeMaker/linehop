@@ -141,10 +141,10 @@ export default function HomePage() {
           <p style={{ color: "#9ca3af", fontSize: 14, marginBottom: 28 }}>Suntem aici să te ajutăm.</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
             <a
-              href="tel:0750525012"
+              href="tel:0750198891"
               style={{ display: "flex", alignItems: "center", gap: 10, color: "#111827", textDecoration: "none", fontSize: 17, fontWeight: 600 }}
             >
-              <span style={{ fontSize: 22 }}>📞</span> 0750 525 012
+              <span style={{ fontSize: 22 }}>📞</span> 0750 198 891
             </a>
             <a
               href="mailto:contact@linehop.ro"
