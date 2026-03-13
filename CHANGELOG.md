@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.0] - 2026-03-13
+### Changed
+- Rebrand to LineHop (from WaitListApp)
+- Landing page complete overhaul: new hero, benefits section, contact section
+
 ## [1.1.1] - 2026-03-13
 ### Fixed
 - fix(ui): client page text improvements and timer fix

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "WaitList App",
-  description: "Restaurant waitlist management",
+  title: "LineHop",
+  description: "LineHop - Restaurant Waitlist Management",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

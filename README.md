@@ -1,6 +1,7 @@
-# Waitlist Repo Skeleton
+# LineHop
 
-QR-based restaurant waitlist MVP.
+LineHop — QR-based restaurant waitlist management.
+Clients join the waitlist by scanning a QR code and receive WhatsApp notifications when their table is ready.
 Messaging in MVP: WhatsApp only.
 Planned later: SMS fallback.
 
