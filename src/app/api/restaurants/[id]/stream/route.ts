@@ -11,6 +11,7 @@ export async function GET(
   const { id } = await context.params
 
   const encoder = new TextEncoder()
+  let cleanup: (() => void) | null = null
 
   const stream = new ReadableStream({
     start(controller) {
@@ -37,17 +38,13 @@ export async function GET(
         send('ping', JSON.stringify({ t: Date.now() }))
       }, 30000)
 
-      // Cleanup on close
-      const cleanup = () => {
+      cleanup = () => {
         emitter.off('update', onUpdate)
         clearInterval(heartbeat)
       }
-
-      // Store cleanup on controller for abort
-      ;(controller as unknown as { cleanup: () => void }).cleanup = cleanup
     },
     cancel() {
-      // called when client disconnects
+      cleanup?.()
     },
   })
 

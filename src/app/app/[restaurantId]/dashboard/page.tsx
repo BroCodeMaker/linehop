@@ -210,7 +210,7 @@ export default function DashboardPage() {
     };
 
     connect();
-    const poll = setInterval(refreshAll, 15000);
+    const poll = setInterval(refreshAll, 5000);
 
     return () => {
       sseRef.current?.close();

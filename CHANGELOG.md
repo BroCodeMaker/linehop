@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4] - 2026-03-14
+### Fixed
+- Dashboard live update: reduced polling interval from 15s to 5s so changes (customer confirmations, expiry events) appear faster without manual refresh
+- SSE stream: fixed resource leak where emitter listeners and heartbeat interval were not cleaned up on client disconnect
+### Changed
+- Settings: removed duplicate "Minute estimate per grup" field from Timere section; unified into a single "Timp estimat per grup" section with manual input + "Folosește media calculată automat" checkbox
+
 ## [1.2.3] - 2026-03-13
 ### Changed
 - Full landing page redesign with structured sections: Hero, Cum funcționează, Beneficii restaurant, Beneficii clienți, Demo vizual, CTA final, Contact, Footer

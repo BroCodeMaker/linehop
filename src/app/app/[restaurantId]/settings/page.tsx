@@ -131,20 +131,15 @@ export default function SettingsPage() {
                   <p style={s.hint}>Numărul maxim de grupuri în coadă simultan (limitat la 50)</p>
                   <input type="number" min={5} max={50} value={form.maxQueueSize} onChange={e => setNum("maxQueueSize", e.target.value)} style={s.input} required />
                 </div>
-                <div style={s.field}>
-                  <label style={s.label}>Minute estimate per grup</label>
-                  <p style={s.hint}>Timp estimat de așteptare per grup (minute). Afișat clienților.</p>
-                  <input type="number" min={1} max={120} value={form.waitMinutesPerGroup} onChange={e => setNum("waitMinutesPerGroup", e.target.value)} style={s.input} required />
-                </div>
               </div>
             </div>
 
             {/* Table turnover section */}
             <div style={s.card}>
-              <div style={s.sectionTitle}>🪑 Timp ocupare masă</div>
+              <div style={s.sectionTitle}>🪑 Timp estimat per grup</div>
               <div style={s.field}>
-                <label style={s.label}>Timp estimat per masă (minute)</label>
-                <p style={s.hint}>Estimarea dumneavoastră manuală pentru cât timp stă un grup la masă</p>
+                <label style={s.label}>Timp estimat per grup (minute)</label>
+                <p style={s.hint}>Valoarea manuală pentru cât timp stă un grup la masă. Folosită la calculul timpului de așteptare afișat clienților.</p>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                   <input
                     type="number"
