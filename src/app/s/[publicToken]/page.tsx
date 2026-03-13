@@ -115,16 +115,15 @@ export default function StatusPage() {
   );
 
   const isActive = ["WAITING", "CALLED", "CONFIRMED"].includes(data.status);
-  const etaMin = data.position ? data.position * 20 : null;
 
   return (
     <div style={{ ...s.page, background: FOOD_BG }}>
       <FoodDecorations />
       <div style={s.card}>
         <div style={s.restName}>{data.restaurantName}</div>
-        {data.guestName && (
-          <div style={s.guest}>👤 {data.guestName} · {data.partySize} {data.partySize === 1 ? "persoană" : "persoane"}</div>
-        )}
+        <div style={s.guest}>
+          {data.guestName && <>👤 {data.guestName} · </>}👥 {data.partySize} {data.partySize === 1 ? "persoană" : "persoane"}
+        </div>
 
         <div style={statusStyle(data.status)}>
           {data.status === "WAITING" && "⏳ În așteptare"}
@@ -140,16 +139,24 @@ export default function StatusPage() {
           <div style={s.posBlock}>
             <div style={s.posNum}>{data.position}</div>
             <div style={s.posLbl}>
-              {data.position === 1 ? "🎉 Ești primul!" : `grupuri înaintea ta`}
+              {data.position === 1
+                ? <span style={{ whiteSpace: "pre-line" }}>{"🎉 Ești primul în listă\nTe anunțăm când masa este gata"}</span>
+                : `grupuri înaintea ta`}
             </div>
-            {etaMin != null && (
-              <div style={s.eta}>⏱ ~{etaMin} minute estimat</div>
-            )}
+          </div>
+        )}
+
+        {data.status === "WAITING" && (
+          <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: "10px", padding: "12px 16px", fontSize: "14px", fontWeight: 600, color: "#166534", textAlign: "center", margin: "0 0 12px" }}>
+            Nu este nevoie să aștepți la intrare<br />Te anunțăm pe WhatsApp
           </div>
         )}
 
         {data.status === "CALLED" && (
           <div>
+            <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: "8px", padding: "8px 12px", fontSize: "13px", fontWeight: 600, color: "#166534", textAlign: "center", margin: "0 0 10px" }}>
+              📱 WhatsApp trimis
+            </div>
             <p style={{ textAlign: "center", fontSize: 14, color: "#9a3412", fontWeight: 600, margin: "0 0 12px" }}>
               Confirmă că vii la restaurant!
             </p>

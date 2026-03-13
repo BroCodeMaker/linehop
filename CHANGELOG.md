@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.1] - 2026-03-13
+### Fixed
+- fix(ui): client page text improvements and timer fix
+  - Change 1: "Ești primul în listă\nTe anunțăm când masa este gata" for position=1
+  - Change 2: Join page estimated wait label → "Timp estimat"
+  - Change 3: WAITING state now shows "Nu este nevoie să aștepți la intrare / Te anunțăm pe WhatsApp"
+  - Change 4: Estimated wait timer hidden from WAITING status; countdown only for CALLED/CONFIRMED
+  - Change 5: Party size display with 👥 emoji and full "persoane" word
+  - Change 6: CALLED state shows "📱 WhatsApp trimis" indicator
+
 ## [1.1.0] - 2026-03-13
 ### Added
 - **Undo actions**: Undo Seated, Undo Skipped, Re-call for recent entries (last 30 min visible in dashboard)

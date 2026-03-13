@@ -153,7 +153,7 @@ export default function JoinPage() {
           <div style={s.qDivider} />
           <div style={s.qStat}>
             <span style={s.qNum}>~{info.estimatedWaitMinutes}</span>
-            <span style={s.qLabel}>min estimat</span>
+            <span style={s.qLabel}>Timp estimat</span>
           </div>
         </div>
 
