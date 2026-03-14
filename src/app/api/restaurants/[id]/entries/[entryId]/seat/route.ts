@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { seatEntry } from "@/lib/queue";
 import { emitUpdate } from "@/lib/emitter";
 import { verifySession } from "@/lib/session";
 
@@ -19,32 +19,19 @@ export async function POST(
   try {
     const { id, entryId } = await context.params;
 
-    // Verify restaurant owns this entry
-    const entry = await prisma.waitlistEntry.findFirst({
-      where: { id: entryId, restaurantId: id },
-    });
-
-    if (!entry) {
-      return NextResponse.json({ error: "Entry not found" }, { status: 404 });
-    }
-
-    // Can seat from CALLED or CONFIRMED states
-    if (!["CALLED", "CONFIRMED"].includes(entry.status)) {
+    // seatEntry validates state (CALLED/CONFIRMED only) + clears reminder timer
+    const result = await seatEntry(id, entryId);
+    if (result.count === 0) {
       return NextResponse.json(
-        { error: `Cannot seat from ${entry.status} state` },
-        { status: 400 }
+        { error: "Entry not found or not in a seatable state (CALLED/CONFIRMED)" },
+        { status: 404 }
       );
     }
 
-    const updated = await prisma.waitlistEntry.update({
-      where: { id: entryId },
-      data: { status: "SEATED", seatedAt: new Date() },
-    });
-
-    console.log(`[seat] Entry ${entryId} seated (was ${entry.status})`);
+    console.log(`[seat] Entry ${entryId} seated`);
     emitUpdate(id);
 
-    return NextResponse.json({ ok: true, entry: updated });
+    return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[seat]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

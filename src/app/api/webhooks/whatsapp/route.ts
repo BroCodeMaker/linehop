@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     // Check for confirm message
     if (text === "CONFIRM" || text === "1" || text.includes("CONFIRM")) {
-      await confirmEntry(entry.id);
+      await confirmEntry(entry.id, entry.restaurantId);
 
       // Log inbound message
       await prisma.messageEvent.create({

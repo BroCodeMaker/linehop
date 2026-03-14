@@ -51,15 +51,16 @@ function CountdownRing({ seconds, total }: { seconds: number; total: number }) {
 
 function statusStyle(st: string): React.CSSProperties {
   const map: Record<string, { bg: string; color: string }> = {
-    WAITING:   { bg: "#fef3c7", color: "#92400e" },
-    CALLED:    { bg: "#fed7aa", color: "#9a3412" },
-    CONFIRMED: { bg: "#dcfce7", color: "#166534" },
-    SEATED:    { bg: "#dbeafe", color: "#1e40af" },
-    EXPIRED:   { bg: "#fee2e2", color: "#991b1b" },
-    CANCELED:  { bg: "#f3f4f6", color: "#6b7280" },
-    SKIPPED:   { bg: "#f3f4f6", color: "#6b7280" },
+    WAITING:          { bg: "#fef3c7", color: "#92400e" },
+    CALLED:           { bg: "#fed7aa", color: "#9a3412" },
+    CONFIRMED:        { bg: "#dcfce7", color: "#166534" },
+    SEATED:           { bg: "#dbeafe", color: "#1e40af" },
+    NO_SHOW_CONFIRM:  { bg: "#fee2e2", color: "#991b1b" },
+    NO_SHOW_ARRIVAL:  { bg: "#fee2e2", color: "#991b1b" },
+    CANCELED:         { bg: "#f3f4f6", color: "#6b7280" },
+    SKIPPED:          { bg: "#f3f4f6", color: "#6b7280" },
   };
-  const c = map[st] ?? map.WAITING;
+  const c = map[st] ?? { bg: "#f3f4f6", color: "#6b7280" };
   return { display: "inline-block", padding: "10px 26px", borderRadius: "999px", fontWeight: 700, fontSize: "17px", ...c, marginBottom: "16px" };
 }
 
@@ -126,22 +127,23 @@ export default function StatusPage() {
         </div>
 
         <div style={statusStyle(data.status)}>
-          {data.status === "WAITING" && "⏳ În așteptare"}
-          {data.status === "CALLED" && "📲 Masa ta e gata!"}
-          {data.status === "CONFIRMED" && "✅ Confirmat"}
-          {data.status === "SEATED" && "🪑 La masă"}
-          {data.status === "EXPIRED" && "⌛ Expirat"}
-          {data.status === "CANCELED" && "❌ Anulat"}
-          {data.status === "SKIPPED" && "⏭️ Sărit"}
+          {data.status === "WAITING"         && "⏳ În așteptare"}
+          {data.status === "CALLED"          && "📲 Masa ta e gata!"}
+          {data.status === "CONFIRMED"       && "✅ Confirmat"}
+          {data.status === "SEATED"          && "🪑 La masă"}
+          {data.status === "NO_SHOW_CONFIRM" && "⌛ Timp de confirmare expirat"}
+          {data.status === "NO_SHOW_ARRIVAL" && "⌛ Nu te-ai prezentat la timp"}
+          {data.status === "CANCELED"        && "❌ Anulat"}
+          {data.status === "SKIPPED"         && "⏭️ Sărit"}
         </div>
 
         {data.status === "WAITING" && data.position != null && (
           <div style={s.posBlock}>
-            <div style={s.posNum}>{data.position}</div>
+            <div style={s.posNum}>{data.position === 1 ? "1" : data.position - 1}</div>
             <div style={s.posLbl}>
               {data.position === 1
                 ? <span style={{ whiteSpace: "pre-line" }}>{"🎉 Ești primul în listă\nTe anunțăm când masa este gata"}</span>
-                : `grupuri înaintea ta`}
+                : `grup${data.position - 1 === 1 ? "" : "uri"} înaintea ta`}
             </div>
           </div>
         )}
@@ -178,8 +180,12 @@ export default function StatusPage() {
           <div style={s.successBox}>🎉 Poftă bună! Bucurați-vă de masă.</div>
         )}
 
-        {(data.status === "EXPIRED") && (
-          <div style={s.warnBox}>⏰ Timpul de confirmare a expirat. Contactați personalul restaurantului.</div>
+        {data.status === "NO_SHOW_CONFIRM" && (
+          <div style={s.warnBox}>⏰ Nu ai confirmat în timp util. Locul tău a fost dat mai departe. Contactați personalul dacă doriți să vă reinregistrați.</div>
+        )}
+
+        {data.status === "NO_SHOW_ARRIVAL" && (
+          <div style={s.warnBox}>⏰ Nu te-ai prezentat la restaurant în timp util. Locul tău a fost dat mai departe. Contactați personalul dacă doriți să vă reinregistrați.</div>
         )}
 
         {data.status === "CANCELED" && (

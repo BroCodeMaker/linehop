@@ -11,10 +11,22 @@ export async function POST(
     const { publicToken } = await context.params;
     const entry = await prisma.waitlistEntry.findUnique({ where: { publicToken } });
     if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (entry.status !== "CALLED") {
+
+    // Quick pre-check for a friendly error message (non-atomic, but harmless)
+    if (!["CALLED", "CONFIRMED"].includes(entry.status)) {
       return NextResponse.json({ error: "Cannot confirm in current status" }, { status: 409 });
     }
-    await confirmEntry(entry.id);
+
+    // Atomic update: only succeeds if status is still CALLED in DB.
+    // Prevents race condition where expiry job ran between our read and write.
+    const result = await confirmEntry(entry.id, entry.restaurantId);
+    if (result.count === 0) {
+      return NextResponse.json(
+        { error: "Confirmation window has expired" },
+        { status: 409 }
+      );
+    }
+
     emitUpdate(entry.restaurantId);
     return NextResponse.json({ ok: true });
   } catch (err) {

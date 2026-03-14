@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { sendWhatsAppMessage } from '@/lib/notify'
+import { getRestaurantSettings } from '@/lib/queue'
 import { emitUpdate } from '@/lib/emitter'
 import { scheduleReminder } from '@/lib/timers'
 import { verifySession } from "@/lib/session";
@@ -23,9 +24,10 @@ export async function POST(
   try {
     const { id, entryId } = await context.params
 
-    const entry = await prisma.waitlistEntry.findFirst({
-      where: { id: entryId, restaurantId: id },
-    })
+    const [entry, settings] = await Promise.all([
+      prisma.waitlistEntry.findFirst({ where: { id: entryId, restaurantId: id } }),
+      getRestaurantSettings(id),
+    ])
 
     if (!entry) {
       return NextResponse.json({ error: 'Entry not found' }, { status: 404 })
@@ -35,13 +37,13 @@ export async function POST(
       return NextResponse.json({ error: `Cannot call again from ${entry.status}` }, { status: 400 })
     }
 
-    // Max 1 retry
-    if (entry.callAgainCount >= 1) {
+    // Use maxCallAgain from restaurant settings (not hardcoded 1)
+    if (entry.callAgainCount >= settings.maxCallAgain) {
       return NextResponse.json({ error: 'Max retries reached' }, { status: 400 })
     }
 
-    // Check still in 10-min buffer
-    if (!entry.expiredAt || Date.now() - entry.expiredAt.getTime() > 10 * 60 * 1000) {
+    // Must still be within the buffer visibility window
+    if (!entry.expiredAt || Date.now() - entry.expiredAt.getTime() > settings.bufferVisibilitySec * 1000) {
       return NextResponse.json({ error: 'Buffer window expired' }, { status: 400 })
     }
 
@@ -51,23 +53,22 @@ export async function POST(
       data: {
         status: 'CALLED',
         calledAt: now,
-        confirmDeadlineAt: new Date(now.getTime() + 120 * 1000),
+        confirmDeadlineAt: new Date(now.getTime() + settings.confirmTimerSec * 1000),
         callAgainCount: { increment: 1 },
         expiredAt: null,
         expiredReason: null,
       },
     })
 
-    // Send WhatsApp (Feature 10) + schedule 60s reminder
+    // Send WhatsApp + schedule 60 s reminder
     if (entry.phoneE164 && entry.phoneE164 !== '+00000000000') {
       const statusUrl = `${APP_URL}/s/${entry.publicToken}`
       await sendWhatsAppMessage(
         entryId,
         entry.phoneE164,
-        `Vă mai acordăm o șansă! Vă rugăm să vă prezentați la intrare în 2 minute.\n\n✅ Confirmați: ${statusUrl}`
+        `Vă mai acordăm o șansă! Vă rugăm să confirmați prezența în ${settings.confirmTimerSec / 60} minute.\n\n✅ Confirmați: ${statusUrl}`
       ).catch(() => {})
 
-      // 60s reminder
       scheduleReminder(entryId, 60 * 1000, async () => {
         const current = await prisma.waitlistEntry.findUnique({
           where: { id: entryId },

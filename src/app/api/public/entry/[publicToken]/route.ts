@@ -19,7 +19,8 @@ export async function GET(
     }
 
     let position: number | null = null;
-    if (entry.status === "WAITING" || entry.status === "CALLED") {
+    if (entry.status === "WAITING") {
+      // +1 converts 0-indexed count-before to 1-indexed position
       position = (await getPositionInQueue(entry.restaurantId, entry.createdAt)) + 1;
     }
 

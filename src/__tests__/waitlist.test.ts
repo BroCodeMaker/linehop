@@ -275,8 +275,15 @@ beforeEach(() => {
       const entry = e as Record<string, unknown>;
       let match = true;
       if (where.restaurantId && entry.restaurantId !== where.restaurantId) match = false;
-      if (where.status && entry.status !== where.status) match = false;
       if (where.id && entry.id !== where.id) match = false;
+      if (where.status) {
+        const st = where.status as { in?: string[] } | string;
+        if (typeof st === "object" && st.in) {
+          if (!st.in.includes(entry.status as string)) match = false;
+        } else if (entry.status !== st) {
+          match = false;
+        }
+      }
       if (match) { Object.assign(entry, data); count++; }
     }
     return Promise.resolve({ count });
@@ -428,14 +435,18 @@ describe("3. Guest confirms (webhook) → CONFIRMED", () => {
       confirmDeadlineAt: new Date(now.getTime() + 120_000),
     });
 
-    const confirmed = await confirmEntry(entry.id);
+    const result = await confirmEntry(entry.id, restaurant.id);
 
-    expect(confirmed.status).toBe("CONFIRMED");
-    expect(confirmed.confirmedAt).toBeDefined();
-    expect(confirmed.arrivalDeadlineAt).toBeDefined();
+    // confirmEntry now returns BatchPayload; fetch to verify
+    expect(result.count).toBe(1);
+    const confirmed = await prismaMock.waitlistEntry.findUnique({ where: { id: entry.id } });
+
+    expect(confirmed?.status).toBe("CONFIRMED");
+    expect(confirmed?.confirmedAt).toBeDefined();
+    expect(confirmed?.arrivalDeadlineAt).toBeDefined();
 
     // Arrival deadline should be ~5 min from now
-    const arrivalMs = new Date(confirmed.arrivalDeadlineAt as Date).getTime() - Date.now();
+    const arrivalMs = new Date(confirmed!.arrivalDeadlineAt as Date).getTime() - Date.now();
     expect(arrivalMs).toBeGreaterThan(250_000);
     expect(arrivalMs).toBeLessThan(320_000);
   });
