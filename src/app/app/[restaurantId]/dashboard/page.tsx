@@ -205,18 +205,24 @@ export default function DashboardPage() {
   const [seatConfirmEntry, setSeatConfirmEntry] = useState<Entry | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [undoState, setUndoState] = useState<Entry | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const sseRef = useRef<EventSource | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchQueue = useCallback(async () => {
     try {
       const res = await fetch(`/api/restaurants/${restaurantId}/queue`, { credentials: "include" });
+      if (res.status === 401) {
+        setSessionExpired(true);
+        router.push("/app/login");
+        return;
+      }
       const data = await res.json();
       if (data.ok) setEntries(data.entries);
     } finally {
       setLoading(false);
     }
-  }, [restaurantId]);
+  }, [restaurantId, router]);
 
   const fetchRestStatus = useCallback(async () => {
     try {
@@ -232,12 +238,17 @@ export default function DashboardPage() {
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetch(`/api/restaurants/${restaurantId}/stats`, { credentials: "include" });
+      if (res.status === 401) {
+        setSessionExpired(true);
+        router.push("/app/login");
+        return;
+      }
       if (res.ok) {
         const d = await res.json();
         setStats(d);
       }
     } catch { /* ignore */ }
-  }, [restaurantId]);
+  }, [restaurantId, router]);
 
   const refreshAll = useCallback(() => {
     fetchQueue();
@@ -609,6 +620,14 @@ export default function DashboardPage() {
         onSupport={() => setShowSupport(true)}
         onErrorLog={openErrorLog}
       />
+
+      {/* Session expired banner */}
+      {sessionExpired && (
+        <div style={{ background: "#ef4444", color: "#fff", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <span style={{ fontSize: 14, fontWeight: 600 }}>Sesiunea a expirat. Reconectează-te.</span>
+          <a href="/app/login" style={{ background: "#fff", color: "#ef4444", fontWeight: 700, fontSize: 13, padding: "4px 12px", borderRadius: 6, textDecoration: "none" }}>Login →</a>
+        </div>
+      )}
 
       {/* Live status indicator */}
       <div style={{ background: "#fff", borderBottom: "1px solid #f3f4f6", padding: "6px 20px", display: "flex", alignItems: "center", gap: 8 }}>
