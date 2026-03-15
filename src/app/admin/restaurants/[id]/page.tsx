@@ -65,19 +65,12 @@ export default function AdminRestaurantPage() {
 
   useEffect(() => {
     async function load() {
-      const res = await fetch(`/api/restaurants/${restaurantId}`);
+      const res = await fetch(`/api/admin/restaurants/${restaurantId}`, { credentials: "include" });
       if (res.status === 401) { router.push("/admin/login"); return; }
       if (!res.ok) { setLoading(false); return; }
       const data = await res.json();
       setRestaurant(data);
-
-      const entriesRes = await fetch(
-        `/api/restaurants/${restaurantId}/entries?status=WAITING,CALLED,CONFIRMED`
-      );
-      if (entriesRes.ok) {
-        const eData = await entriesRes.json();
-        setEntries(Array.isArray(eData) ? eData : eData.entries ?? []);
-      }
+      setEntries(Array.isArray(data.entries) ? data.entries : []);
 
       // Generate QR code
       const publicUrl =

@@ -94,7 +94,7 @@ export default function QrTokensPage() {
 
   async function handleDelete(t: QrToken) {
     if (!confirm(`Ștergi token-ul ${t.token}? Această acțiune nu poate fi anulată.`)) return;
-    const res = await fetch(`/api/admin/qr-tokens/${t.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin/qr-tokens/${t.id}`, { method: "DELETE", credentials: "include" });
     if (res.ok) {
       await loadAll();
     } else {
@@ -106,7 +106,7 @@ export default function QrTokensPage() {
   async function handleDetails(t: QrToken) {
     setDetailsLoading(true);
     setDetailsToken(null);
-    const res = await fetch(`/api/admin/qr-tokens/${t.id}`);
+    const res = await fetch(`/api/admin/qr-tokens/${t.id}`, { credentials: "include" });
     if (res.ok) {
       setDetailsToken(await res.json());
     }
