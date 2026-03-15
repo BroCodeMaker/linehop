@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface AdminNavProps {
   restaurantId: string;
@@ -11,6 +13,7 @@ interface AdminNavProps {
 export default function AdminNav({ restaurantId, onSupport, onErrorLog }: AdminNavProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const isDashboard = pathname?.includes("/dashboard");
   const isSettings = pathname?.includes("/settings");
@@ -29,9 +32,9 @@ export default function AdminNav({ restaurantId, onSupport, onErrorLog }: AdminN
         <button
           onClick={() => router.push("/app")}
           style={s.backBtn}
-          title="Toate restaurantele"
+          title={t("all_restaurants")}
         >
-          ← Restaurante
+          {t("back_restaurants")}
         </button>
         <span style={s.logo}>LineHop</span>
       </div>
@@ -45,7 +48,7 @@ export default function AdminNav({ restaurantId, onSupport, onErrorLog }: AdminN
             ...(isDashboard ? s.tabActive : {}),
           }}
         >
-          📊 Dashboard
+          📊 {t("nav_dashboard")}
         </button>
         <button
           onClick={() => router.push(`/app/${restaurantId}/settings`)}
@@ -54,7 +57,7 @@ export default function AdminNav({ restaurantId, onSupport, onErrorLog }: AdminN
             ...(isSettings ? s.tabActive : {}),
           }}
         >
-          ⚙️ Setări
+          ⚙️ {t("nav_settings")}
         </button>
         <button
           onClick={() => router.push(`/app/${restaurantId}/history`)}
@@ -63,7 +66,7 @@ export default function AdminNav({ restaurantId, onSupport, onErrorLog }: AdminN
             ...(isHistory ? s.tabActive : {}),
           }}
         >
-          📋 Istoric
+          📋 {t("nav_history")}
         </button>
         <button
           onClick={() => router.push(`/app/${restaurantId}/statistics`)}
@@ -72,23 +75,24 @@ export default function AdminNav({ restaurantId, onSupport, onErrorLog }: AdminN
             ...(isStatistics ? s.tabActive : {}),
           }}
         >
-          📊 Statistici
+          📊 {t("nav_statistics")}
         </button>
         {onSupport && (
           <button onClick={onSupport} style={{ ...s.tab, color: "#92400e", background: "#fef3c7" }}>
-            🆘 Support
+            🆘 {t("nav_support")}
           </button>
         )}
         {onErrorLog && (
           <button onClick={onErrorLog} style={{ ...s.tab, color: "#0c4a6e", background: "#e0f2fe" }}>
-            📋 Error Log
+            📋 {t("nav_error_log")}
           </button>
         )}
       </div>
 
       {/* Right actions */}
       <div style={s.right}>
-        <button onClick={handleLogout} style={s.logoutBtn}>Logout</button>
+        <LocaleSwitcher />
+        <button onClick={handleLogout} style={s.logoutBtn}>{t("logout")}</button>
       </div>
     </div>
   );

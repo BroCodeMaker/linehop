@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import AdminNav from "@/components/AdminNav";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const FOOD_BG = `radial-gradient(ellipse at 5% 0%, rgba(251,146,60,0.12) 0%, transparent 40%), radial-gradient(ellipse at 95% 100%, rgba(234,179,8,0.08) 0%, transparent 40%), #fdf6ee`;
 
@@ -24,6 +25,7 @@ type Settings = {
 
 export default function SettingsPage() {
   const { restaurantId } = useParams<{ restaurantId: string }>();
+  const { t } = useTranslation();
   const [form, setForm] = useState<Settings>({
     confirmTimerSec: 120,
     arrivalTimerSec: 300,
@@ -96,41 +98,41 @@ export default function SettingsPage() {
 
       <div style={s.body}>
         {loading ? (
-          <p style={s.muted}>Se încarcă...</p>
+          <p style={s.muted}>{t("loading")}</p>
         ) : (
           <form onSubmit={handleSave}>
             {/* Timers section */}
             <div style={s.card}>
-              <div style={s.sectionTitle}>⏱ Timere</div>
+              <div style={s.sectionTitle}>{t("settings_timers")}</div>
               <div style={s.grid}>
                 <div style={s.field}>
-                  <label style={s.label}>Confirmare (secunde)</label>
-                  <p style={s.hint}>Timp acordat clientului chemat să confirme prezența</p>
+                  <label style={s.label}>{t("settings_confirm_timer")}</label>
+                  <p style={s.hint}>{t("settings_confirm_timer_hint")}</p>
                   <input type="number" min={30} max={600} value={form.confirmTimerSec} onChange={e => setNum("confirmTimerSec", e.target.value)} style={s.input} required />
                 </div>
                 <div style={s.field}>
-                  <label style={s.label}>Sosire (secunde)</label>
-                  <p style={s.hint}>Timp acordat clientului confirmat să ajungă la intrare</p>
+                  <label style={s.label}>{t("settings_arrival_timer")}</label>
+                  <p style={s.hint}>{t("settings_arrival_timer_hint")}</p>
                   <input type="number" min={60} max={1800} value={form.arrivalTimerSec} onChange={e => setNum("arrivalTimerSec", e.target.value)} style={s.input} required />
                 </div>
                 <div style={s.field}>
-                  <label style={s.label}>Vizibilitate buffer (secunde)</label>
-                  <p style={s.hint}>Cât timp rămân vizibile intrările NO_SHOW în dashboard</p>
+                  <label style={s.label}>{t("settings_buffer_visibility")}</label>
+                  <p style={s.hint}>{t("settings_buffer_visibility_hint")}</p>
                   <input type="number" min={60} max={3600} value={form.bufferVisibilitySec} onChange={e => setNum("bufferVisibilitySec", e.target.value)} style={s.input} required />
                 </div>
                 <div style={s.field}>
-                  <label style={s.label}>Max Call Again</label>
-                  <p style={s.hint}>Numărul maxim de rechemări permise per client</p>
+                  <label style={s.label}>{t("settings_max_call_again")}</label>
+                  <p style={s.hint}>{t("settings_max_call_again_hint")}</p>
                   <input type="number" min={0} max={5} value={form.maxCallAgain} onChange={e => setNum("maxCallAgain", e.target.value)} style={s.input} required />
                 </div>
                 <div style={s.field}>
-                  <label style={s.label}>Max mărime grup</label>
-                  <p style={s.hint}>Numărul maxim de persoane per rezervare</p>
+                  <label style={s.label}>{t("settings_max_party_size")}</label>
+                  <p style={s.hint}>{t("settings_max_party_size_hint")}</p>
                   <input type="number" min={1} max={50} value={form.maxPartySize} onChange={e => setNum("maxPartySize", e.target.value)} style={s.input} required />
                 </div>
                 <div style={s.field}>
-                  <label style={s.label}>Max coadă (max 50)</label>
-                  <p style={s.hint}>Numărul maxim de grupuri în coadă simultan (limitat la 50)</p>
+                  <label style={s.label}>{t("settings_max_queue")}</label>
+                  <p style={s.hint}>{t("settings_max_queue_hint")}</p>
                   <input type="number" min={5} max={50} value={form.maxQueueSize} onChange={e => setNum("maxQueueSize", e.target.value)} style={s.input} required />
                 </div>
               </div>
@@ -138,10 +140,10 @@ export default function SettingsPage() {
 
             {/* Table turnover section */}
             <div style={s.card}>
-              <div style={s.sectionTitle}>🪑 Timp estimat per grup</div>
+              <div style={s.sectionTitle}>{t("settings_table_time")}</div>
               <div style={s.field}>
-                <label style={s.label}>Timp estimat per grup (minute)</label>
-                <p style={s.hint}>Valoarea manuală pentru cât timp stă un grup la masă. Folosită la calculul timpului de așteptare afișat clienților.</p>
+                <label style={s.label}>{t("settings_table_time_label")}</label>
+                <p style={s.hint}>{t("settings_table_time_hint")}</p>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                   <input
                     type="number"
@@ -155,11 +157,11 @@ export default function SettingsPage() {
                   />
                   {calculatedAvgMin != null ? (
                     <span style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, background: "#f0fdf4", padding: "4px 10px", borderRadius: 8, border: "1px solid #bbf7d0" }}>
-                      ✅ calculat: {calculatedAvgMin} min
+                      {t("settings_calculated").replace("{min}", String(calculatedAvgMin))}
                     </span>
                   ) : (
                     <span style={{ fontSize: 13, color: "#9ca3af" }}>
-                      (calculat: insuficient date)
+                      {t("settings_insufficient_data")}
                     </span>
                   )}
                 </div>
@@ -170,7 +172,7 @@ export default function SettingsPage() {
                     onChange={e => setForm(f => ({ ...f, useCalculatedAvgTime: e.target.checked }))}
                     style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#16a34a" }}
                   />
-                  Folosește media calculată automat
+                  {t("settings_use_calculated")}
                   {form.useCalculatedAvgTime && calculatedAvgMin != null && (
                     <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 400, marginLeft: 4 }}>
                       ({calculatedAvgMin} min)
@@ -178,7 +180,7 @@ export default function SettingsPage() {
                   )}
                   {form.useCalculatedAvgTime && calculatedAvgMin == null && (
                     <span style={{ fontSize: 12, color: "#f59e0b", fontWeight: 400, marginLeft: 4 }}>
-                      (insuficient date — se folosește valoarea manuală)
+                      {t("settings_insufficient_manual")}
                     </span>
                   )}
                 </label>
@@ -187,40 +189,40 @@ export default function SettingsPage() {
 
             {/* WhatsApp messages section */}
             <div style={s.card}>
-              <div style={s.sectionTitle}>💬 Mesaje WhatsApp</div>
+              <div style={s.sectionTitle}>{t("settings_whatsapp")}</div>
               <div style={{ ...s.fieldFull, marginBottom: 12 }}>
                 <span style={{ fontSize: 12, color: "#6b7280", background: "#f3f4f6", padding: "6px 10px", borderRadius: 6, display: "inline-block" }}>
-                  💡 Placeholder disponibil: <code>{"{name}"}</code> — înlocuit cu numele clientului (sau "Stimate client" dacă lipsește)
+                  {t("settings_placeholder_hint")}
                 </span>
               </div>
               <div style={s.fieldFull}>
-                <label style={s.label}>Mesaj chemare</label>
-                <p style={s.hint}>Trimis când clientul este chemat la intrare · suportă <code>{"{name}"}</code></p>
+                <label style={s.label}>{t("settings_msg_call")}</label>
+                <p style={s.hint}>{t("settings_msg_call_hint")}</p>
                 <textarea value={form.msgWhatsappCall} onChange={e => setStr("msgWhatsappCall", e.target.value)} style={s.textarea} rows={3} required />
               </div>
               <div style={s.fieldFull}>
-                <label style={s.label}>Mesaj expirare</label>
-                <p style={s.hint}>Trimis când locul clientului a expirat (NO_SHOW) · suportă <code>{"{name}"}</code></p>
+                <label style={s.label}>{t("settings_msg_expire")}</label>
+                <p style={s.hint}>{t("settings_msg_expire_hint")}</p>
                 <textarea value={form.msgWhatsappExpire} onChange={e => setStr("msgWhatsappExpire", e.target.value)} style={s.textarea} rows={3} required />
               </div>
               <div style={s.fieldFull}>
-                <label style={s.label}>Mesaj rechemare</label>
-                <p style={s.hint}>Trimis la Call Again (a doua șansă) · suportă <code>{"{name}"}</code></p>
+                <label style={s.label}>{t("settings_msg_call_again")}</label>
+                <p style={s.hint}>{t("settings_msg_call_again_hint")}</p>
                 <textarea value={form.msgWhatsappCallAgain} onChange={e => setStr("msgWhatsappCallAgain", e.target.value)} style={s.textarea} rows={3} required />
               </div>
               <div style={s.fieldFull}>
-                <label style={s.label}>Mesaj așteptare</label>
-                <p style={s.hint}>Trimis la 10 min de așteptare, apoi la fiecare 15 min · suportă <code>{"{name}"}</code> și <code>{"{position}"}</code> (grupuri înainte)</p>
+                <label style={s.label}>{t("settings_msg_waiting")}</label>
+                <p style={s.hint}>{t("settings_msg_waiting_hint")}</p>
                 <textarea value={form.msgWhatsappWaiting} onChange={e => setStr("msgWhatsappWaiting", e.target.value)} style={s.textarea} rows={3} required />
               </div>
             </div>
 
             {success && (
-              <div style={s.successMsg}>✅ Setările au fost salvate cu succes!</div>
+              <div style={s.successMsg}>{t("settings_saved")}</div>
             )}
 
             <button type="submit" disabled={saving} style={s.saveBtn}>
-              {saving ? "Se salvează..." : "💾 Salvează Setările"}
+              {saving ? t("saving") : t("settings_save_btn")}
             </button>
           </form>
         )}

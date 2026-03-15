@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import AdminNav from "@/components/AdminNav";
 import { APP_VERSION } from "@/lib/version";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type Entry = {
   id: string;
@@ -171,6 +172,7 @@ void timeAgo;
 export default function DashboardPage() {
   const { restaurantId } = useParams<{ restaurantId: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   // null = not yet loaded from DB (prevents highlight flicker on refresh)
@@ -295,7 +297,7 @@ export default function DashboardPage() {
 
   async function handleSetStatus(newStatus: RestStatus) {
     if (newStatus === restStatus) return;
-    if (newStatus === "CLOSED" && !confirm("Închizi restaurantul? Toți clienții din coadă vor fi notificați și lista se va goli.")) return;
+    if (newStatus === "CLOSED" && !confirm(t("close_restaurant_confirm"))) return;
     setChangingStatus(true);
     try {
       const res = await fetch(`/api/restaurants/${restaurantId}/status`, {
@@ -308,10 +310,10 @@ export default function DashboardPage() {
         setRestStatus(newStatus);
         await refreshAll();
         const msgs: Record<string, string> = {
-          CLOSED: "Restaurantul a fost închis. Clienții au fost notificați.",
-          FULL: "Modul Waitlist activat. Clienții se pot înscrie în coadă.",
-          OPEN: "Modul normal activat. Clienții intră direct.",
-          PAUSED: "Waitlist-ul este în pauză. Coada existentă rămâne intactă.",
+          CLOSED: t("msg_status_closed"),
+          FULL: t("msg_status_full"),
+          OPEN: t("msg_status_open"),
+          PAUSED: t("msg_status_paused"),
         };
         setMessage({ text: msgs[newStatus] || "", type: newStatus === "FULL" ? "ok" : "info" });
       }
@@ -329,7 +331,7 @@ export default function DashboardPage() {
         const data = await res.json();
         setListClosed(data.listClosed);
         setMessage({
-          text: data.listClosed ? "🔒 Lista de așteptare a fost închisă." : "🔓 Lista de așteptare a fost deschisă.",
+          text: data.listClosed ? t("msg_list_closed") : t("msg_list_opened"),
           type: "info",
         });
         setTimeout(() => setMessage(null), 3000);
@@ -346,9 +348,9 @@ export default function DashboardPage() {
       const res = await fetch(`/api/restaurants/${restaurantId}/call-next`, { method: "POST", credentials: "include" });
       const data = await res.json();
       if (data.ok && data.entry) {
-        setMessage({ text: `✅ Chemat: ${data.entry.guestName ?? data.entry.phoneE164} (${data.entry.partySize} pers.)`, type: "ok" });
+        setMessage({ text: t("msg_called").replace("{name}", data.entry.guestName ?? data.entry.phoneE164).replace("{size}", String(data.entry.partySize)), type: "ok" });
       } else {
-        setMessage({ text: "ℹ️ Nu mai sunt clienți în așteptare", type: "info" });
+        setMessage({ text: t("msg_no_waiting"), type: "info" });
       }
       await refreshAll();
     } finally {
@@ -361,7 +363,7 @@ export default function DashboardPage() {
     const res = await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/${action}`, { method: "POST", credentials: "include" });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
-      setMessage({ text: `❌ ${d.error ?? "Eroare"}`, type: "info" });
+      setMessage({ text: `❌ ${d.error ?? t("error")}`, type: "info" });
       setTimeout(() => setMessage(null), 3000);
     } else if (prevEntry) {
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
@@ -396,7 +398,7 @@ export default function DashboardPage() {
       }),
     });
     await refreshAll();
-    setMessage({ text: "↩️ Acțiune anulată", type: "ok" });
+    setMessage({ text: t("msg_undo"), type: "ok" });
     setTimeout(() => setMessage(null), 2000);
   }
 
@@ -434,7 +436,7 @@ export default function DashboardPage() {
       if (res.ok) {
         setShowSupport(false);
         setSupportForm({ subject: "", description: "" });
-        setMessage({ text: "✅ Solicitare trimisă cu succes!", type: "ok" });
+        setMessage({ text: t("msg_support_sent"), type: "ok" });
         setTimeout(() => setMessage(null), 3000);
       } else {
         const d = await res.json().catch(() => ({}));
@@ -483,7 +485,7 @@ export default function DashboardPage() {
         setShowManualForm(false);
         setManualForm({ guestName: "", partySize: 2, phoneE164: "", notes: "" });
         await refreshAll();
-        setMessage({ text: "✅ Grup adăugat manual", type: "ok" });
+        setMessage({ text: t("msg_group_added"), type: "ok" });
         setTimeout(() => setMessage(null), 3000);
       }
     } finally {
@@ -501,7 +503,7 @@ export default function DashboardPage() {
     });
     setWalkInNotes("");
     await refreshAll();
-    setMessage({ text: `✅ Walk-in ${partySize} pers. înregistrat`, type: "ok" });
+    setMessage({ text: t("msg_walk_in_registered").replace("{size}", String(partySize)), type: "ok" });
     setTimeout(() => setMessage(null), 3000);
   }
 
@@ -520,7 +522,7 @@ export default function DashboardPage() {
       setQrDataUrl(dataUrl);
       setShowQR(true);
     } catch {
-      setMessage({ text: "❌ Nu s-a putut genera QR codul", type: "info" });
+      setMessage({ text: t("msg_qr_error"), type: "info" });
     }
   }
 
@@ -552,7 +554,7 @@ export default function DashboardPage() {
       if (res.ok) {
         setEditingId(null);
         await refreshAll();
-        setMessage({ text: "✅ Entry actualizat", type: "ok" });
+        setMessage({ text: t("msg_entry_updated"), type: "ok" });
         setTimeout(() => setMessage(null), 3000);
       }
     } finally {
@@ -582,10 +584,10 @@ export default function DashboardPage() {
   const recentEntries = entries.filter(e => ["SEATED", "SKIPPED"].includes(e.status));
 
   const statusCfg: Record<string, { label: string; active: string; icon: string }> = {
-    OPEN:   { label: "Deschis",         active: "#16a34a", icon: "🟢" },
-    FULL:   { label: "Plin / Waitlist", active: "#ea580c", icon: "🔴" },
-    PAUSED: { label: "Pauză",           active: "#d97706", icon: "⏸️" },
-    CLOSED: { label: "Închis",          active: "#6b7280", icon: "🌙" },
+    OPEN:   { label: t("restStatus_OPEN"),   active: "#16a34a", icon: "🟢" },
+    FULL:   { label: t("restStatus_FULL"),   active: "#ea580c", icon: "🔴" },
+    PAUSED: { label: t("restStatus_PAUSED"), active: "#d97706", icon: "⏸️" },
+    CLOSED: { label: t("restStatus_CLOSED"), active: "#6b7280", icon: "🌙" },
   };
 
   // Suppress unused warning
@@ -610,16 +612,16 @@ export default function DashboardPage() {
       {/* Live status indicator */}
       <div style={{ background: "#fff", borderBottom: "1px solid #f3f4f6", padding: "6px 20px", display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: sseConnected ? "#16a34a" : "#ef4444" }}>
-          {sseConnected ? "🟢 Live" : "🔴 Reconnecting..."}
+          {sseConnected ? t("live_active") : t("live_reconnecting")}
         </span>
-        <span style={{ fontSize: 12, color: "#9ca3af" }}>Queue Dashboard</span>
+        <span style={{ fontSize: 12, color: "#9ca3af" }}>{t("queue_dashboard")}</span>
         <span style={{ fontSize: 11, color: "#d1d5db", marginLeft: "auto" }}>v{APP_VERSION}</span>
       </div>
 
       <div style={s.body}>
         {/* Restaurant Status Toggle */}
         <div style={s.statusCard}>
-          <div style={s.statusLabel}>Status Restaurant</div>
+          <div style={s.statusLabel}>{t("rest_status_label")}</div>
           <div style={s.statusRow}>
             {(["OPEN", "FULL", "PAUSED", "CLOSED"] as RestStatus[]).map((st) => {
               const c = statusCfg[st];
@@ -661,11 +663,11 @@ export default function DashboardPage() {
                 transition: "all 0.2s",
               }}
             >
-              {listClosed ? "🔓 Deschide lista" : "🔒 Închide lista"}
+              {listClosed ? t("list_open") : t("list_close")}
             </button>
             {listClosed && (
               <span style={{ fontSize: 12, color: "#6b7280" }}>
-                Clienții noi nu pot intra în coadă
+                {t("list_closed_note")}
               </span>
             )}
           </div>
@@ -674,31 +676,31 @@ export default function DashboardPage() {
         {/* Stats Bar (live metrics) */}
         <div style={s.statsRow}>
           <div style={{ ...s.statBox, background: "#fef3c7", color: "#92400e" }}>
-            <span style={s.statLbl}>⏳ Waiting now</span>
+            <span style={s.statLbl}>{t("waiting_now")}</span>
             <span style={s.statNum}>{stats?.waitingNow ?? waiting}</span>
           </div>
           <div style={{ ...s.statBox, background: "#fed7aa", color: "#9a3412" }}>
-            <span style={s.statLbl}>🪑 Avg turnover</span>
+            <span style={s.statLbl}>{t("avg_turnover")}</span>
             <span style={s.statNum}>
               {stats?.avgWaitMinutes != null ? `${stats.avgWaitMinutes}m` : "—"}
             </span>
           </div>
           <div style={{ ...s.statBox, background: "#dcfce7", color: "#166534" }}>
-            <span style={s.statLbl}>🪑 Seated tonight</span>
+            <span style={s.statLbl}>{t("seated_tonight")}</span>
             <span style={s.statNum}>{stats?.seatedTonight ?? 0}</span>
           </div>
           <div style={{ ...s.statBox, background: "#ede9fe", color: "#5b21b6" }}>
-            <span style={s.statLbl}>✅ Confirm rate</span>
+            <span style={s.statLbl}>{t("confirm_rate")}</span>
             <span style={s.statNum}>
               {stats?.confirmRate != null ? `${stats.confirmRate}%` : "—"}
             </span>
           </div>
           <div style={{ ...s.statBox, background: "#fed7aa", color: "#9a3412" }}>
-            <span style={s.statLbl}>📲 Chemat</span>
+            <span style={s.statLbl}>{t("called_stat")}</span>
             <span style={s.statNum}>{called}</span>
           </div>
           <div style={{ ...s.statBox, background: "#dcfce7", color: "#166534" }}>
-            <span style={s.statLbl}>✅ Confirmat</span>
+            <span style={s.statLbl}>{t("confirmed_stat")}</span>
             <span style={s.statNum}>{confirmed}</span>
           </div>
         </div>
@@ -717,23 +719,23 @@ export default function DashboardPage() {
             disabled={callingNext || waiting === 0 || restStatus === "CLOSED"}
             style={{ ...s.callBtn, flex: 2, marginBottom: 0, minWidth: 160, opacity: (waiting === 0 || restStatus === "CLOSED") ? 0.4 : 1 }}
           >
-            {callingNext ? "Se cheamă..." : "📣 CHEAMĂ URMĂTORUL"}
+            {callingNext ? t("calling") : t("call_next")}
           </button>
           <button onClick={() => setShowManualForm(v => !v)} style={{ ...s.toolBtn, flex: 1, minWidth: 130 }}>
-            ➕ Adaugă manual
+            {t("add_manual")}
           </button>
           <button onClick={() => setShowWalkIn(v => !v)} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#e0e7ff", color: "#3730a3", border: "2px solid #a5b4fc" }}>
-            🚶 Walk-in
+            {t("walk_in")}
           </button>
           <button onClick={openQR} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#f0fdf4", color: "#166534", border: "2px solid #86efac" }}>
-            📱 QR Code
+            {t("qr_code")}
           </button>
           <button onClick={async () => {
-            if (!confirm("Ștergi toată coada? (doar pentru teste)")) return;
+            if (!confirm(t("reset_confirm"))) return;
             await fetch(`/api/restaurants/${restaurantId}/reset-test`, { method: "POST", credentials: "include" });
             fetchQueue();
           }} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#fff1f2", color: "#be123c", border: "2px solid #fda4af" }}>
-            🗑️ Reset Test
+            {t("reset_test")}
           </button>
         </div>
 
@@ -742,23 +744,23 @@ export default function DashboardPage() {
           <div style={s.manualForm}>
             <form onSubmit={handleManualAdd} style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "flex-end" }}>
               <div style={s.formGroup}>
-                <label style={s.formLabel}>Nume *</label>
-                <input value={manualForm.guestName} onChange={e => setManualForm(f => ({ ...f, guestName: e.target.value }))} placeholder="Nume grup" required style={s.formInput} />
+                <label style={s.formLabel}>{t("field_name_required")}</label>
+                <input value={manualForm.guestName} onChange={e => setManualForm(f => ({ ...f, guestName: e.target.value }))} placeholder={t("name_placeholder")} required style={s.formInput} />
               </div>
               <div style={s.formGroup}>
-                <label style={s.formLabel}>Persoane *</label>
+                <label style={s.formLabel}>{t("field_persons_required")}</label>
                 <input type="number" min={1} max={20} value={manualForm.partySize} onChange={e => setManualForm(f => ({ ...f, partySize: Number(e.target.value) }))} style={{ ...s.formInput, width: 70 }} required />
               </div>
               <div style={s.formGroup}>
-                <label style={s.formLabel}>Telefon (opțional)</label>
-                <input type="tel" value={manualForm.phoneE164} onChange={e => setManualForm(f => ({ ...f, phoneE164: e.target.value }))} placeholder="07xx xxx xxx" style={s.formInput} />
+                <label style={s.formLabel}>{t("field_phone_optional")}</label>
+                <input type="tel" value={manualForm.phoneE164} onChange={e => setManualForm(f => ({ ...f, phoneE164: e.target.value }))} placeholder={t("phone_placeholder")} style={s.formInput} />
               </div>
               <div style={{ ...s.formGroup, minWidth: 200 }}>
-                <label style={s.formLabel}>Notă (opțional)</label>
-                <input value={manualForm.notes} onChange={e => setManualForm(f => ({ ...f, notes: e.target.value }))} placeholder="ex: scaun înalt, terasă..." style={s.formInput} maxLength={500} />
+                <label style={s.formLabel}>{t("field_note")}</label>
+                <input value={manualForm.notes} onChange={e => setManualForm(f => ({ ...f, notes: e.target.value }))} placeholder={t("note_placeholder")} style={s.formInput} maxLength={500} />
               </div>
-              <button type="submit" disabled={manualSubmitting} style={s.submitBtn}>{manualSubmitting ? "..." : "Adaugă"}</button>
-              <button type="button" onClick={() => setShowManualForm(false)} style={s.cancelBtn}>Anulează</button>
+              <button type="submit" disabled={manualSubmitting} style={s.submitBtn}>{manualSubmitting ? "..." : t("add")}</button>
+              <button type="button" onClick={() => setShowManualForm(false)} style={s.cancelBtn}>{t("cancel")}</button>
             </form>
           </div>
         )}
@@ -766,13 +768,13 @@ export default function DashboardPage() {
         {/* Walk-in Popup */}
         {showWalkIn && (
           <div style={s.manualForm}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 10 }}>🚶 Walk-in — Selectează numărul de persoane:</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#374151", marginBottom: 10 }}>{t("walk_in_title")}</div>
             <div style={{ marginBottom: 10 }}>
-              <label style={s.formLabel}>Notă (opțional)</label>
+              <label style={s.formLabel}>{t("field_note")}</label>
               <input
                 value={walkInNotes}
                 onChange={e => setWalkInNotes(e.target.value)}
-                placeholder="ex: terasă, aniversare..."
+                placeholder={t("walk_in_note_placeholder")}
                 style={{ ...s.formInput, width: "100%", maxWidth: 320, marginTop: 4 }}
                 maxLength={500}
               />
@@ -799,7 +801,7 @@ export default function DashboardPage() {
               boxShadow: "0 20px 60px rgba(0,0,0,0.3)", maxWidth: 380, width: "90%"
             }} onClick={e => e.stopPropagation()}>
               <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8, color: "#1a1a1a" }}>
-                📱 QR Cod Intrare
+                {t("qr_title")}
               </div>
               <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
                 {`${typeof window !== "undefined" ? window.location.origin : ""}/r/${restaurantSlug}`}
@@ -812,13 +814,13 @@ export default function DashboardPage() {
                   padding: "10px 24px", background: "#16a34a", color: "#fff",
                   border: "none", borderRadius: 10, fontWeight: 700, cursor: "pointer", fontSize: 14
                 }}>
-                  ⬇️ Descarcă PNG
+                  {t("qr_download")}
                 </button>
                 <button onClick={() => setShowQR(false)} style={{
                   padding: "10px 24px", background: "transparent", color: "#6b7280",
                   border: "1.5px solid #e5e7eb", borderRadius: 10, cursor: "pointer", fontSize: 14
                 }}>
-                  Închide
+                  {t("close")}
                 </button>
               </div>
             </div>
@@ -835,33 +837,33 @@ export default function DashboardPage() {
               background: "#fff", borderRadius: 20, padding: 32,
               boxShadow: "0 20px 60px rgba(0,0,0,0.3)", maxWidth: 460, width: "90%"
             }} onClick={e => e.stopPropagation()}>
-              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: "#1a1a1a" }}>🆘 Support</div>
+              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: "#1a1a1a" }}>{t("support_title")}</div>
               <form onSubmit={handleSupportSubmit} style={{ display: "flex", flexDirection: "column" as const, gap: 12 }}>
                 <div style={s.formGroup}>
-                  <label style={s.formLabel}>Subiect *</label>
+                  <label style={s.formLabel}>{t("support_subject")}</label>
                   <input
                     value={supportForm.subject}
                     onChange={e => setSupportForm(f => ({ ...f, subject: e.target.value }))}
-                    placeholder="ex: Timer nu funcționează corect"
+                    placeholder={t("support_subject_placeholder")}
                     required
                     style={s.formInput}
                   />
                 </div>
                 <div style={s.formGroup}>
-                  <label style={s.formLabel}>Descriere *</label>
+                  <label style={s.formLabel}>{t("support_description")}</label>
                   <textarea
                     value={supportForm.description}
                     onChange={e => setSupportForm(f => ({ ...f, description: e.target.value }))}
-                    placeholder="Descrie problema în detaliu..."
+                    placeholder={t("support_description_placeholder")}
                     required
                     rows={4}
                     style={{ ...s.formInput, resize: "vertical" as const, fontFamily: "inherit" }}
                   />
                 </div>
                 <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-                  <button type="button" onClick={() => setShowSupport(false)} style={s.cancelBtn}>Anulează</button>
+                  <button type="button" onClick={() => setShowSupport(false)} style={s.cancelBtn}>{t("cancel")}</button>
                   <button type="submit" disabled={supportSubmitting} style={s.submitBtn}>
-                    {supportSubmitting ? "Se trimite..." : "Trimite"}
+                    {supportSubmitting ? t("support_sending") : t("support_send")}
                   </button>
                 </div>
               </form>
@@ -882,11 +884,11 @@ export default function DashboardPage() {
                 ? { position: "fixed" as const, top: 0, left: 0, right: 0, bottom: 0, borderRadius: 0 }
                 : { borderRadius: 20, maxWidth: 700, width: "95%", maxHeight: "80vh" }),
             }} onClick={e => e.stopPropagation()}>
-              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: "#1a1a1a" }}>📋 Error Log</div>
+              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: "#1a1a1a" }}>{t("error_log_title")}</div>
               {loadingErrorLog ? (
-                <p style={s.muted}>Se încarcă...</p>
+                <p style={s.muted}>{t("loading")}</p>
               ) : errorLogs.length === 0 ? (
-                <p style={{ color: "#9ca3af", textAlign: "center" as const, padding: "24px 0" }}>Nu există înregistrări.</p>
+                <p style={{ color: "#9ca3af", textAlign: "center" as const, padding: "24px 0" }}>{t("error_log_empty")}</p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
                   {errorLogs.map(log => (
@@ -916,7 +918,7 @@ export default function DashboardPage() {
                 </div>
               )}
               <div style={{ marginTop: 20, textAlign: "right" as const }}>
-                <button onClick={() => setShowErrorLog(false)} style={s.cancelBtn}>Închide</button>
+                <button onClick={() => setShowErrorLog(false)} style={s.cancelBtn}>{t("close")}</button>
               </div>
             </div>
           </div>
@@ -934,23 +936,23 @@ export default function DashboardPage() {
             }} onClick={e => e.stopPropagation()}>
               <div style={{ fontSize: 32, textAlign: "center" as const, marginBottom: 12 }}>⚠️</div>
               <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1a1a", textAlign: "center" as const, marginBottom: 8 }}>
-                Clientul nu a fost chemat
+                {t("seat_without_call_title")}
               </div>
               <div style={{ fontSize: 14, color: "#6b7280", textAlign: "center" as const, marginBottom: 24 }}>
-                <strong>{seatConfirmEntry.guestName ?? seatConfirmEntry.phoneE164}</strong> ({seatConfirmEntry.partySize} pers.) va fi sezat direct, fără a fi chemat în prealabil.
+                {t("seat_without_call_body").replace("{name}", seatConfirmEntry.guestName ?? seatConfirmEntry.phoneE164).replace("{size}", String(seatConfirmEntry.partySize))}
               </div>
               <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
                 <button
                   onClick={() => setSeatConfirmEntry(null)}
                   style={{ padding: "10px 24px", background: "transparent", color: "#6b7280", border: "1.5px solid #e5e7eb", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 600 }}
                 >
-                  Anulează
+                  {t("cancel")}
                 </button>
                 <button
                   onClick={() => { const e = seatConfirmEntry; setSeatConfirmEntry(null); handleAction(e.id, "seat"); }}
                   style={{ padding: "10px 24px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
                 >
-                  Confirmă Așezat
+                  {t("confirm_seated")}
                 </button>
               </div>
             </div>
@@ -966,21 +968,21 @@ export default function DashboardPage() {
             zIndex: 200, boxShadow: "0 4px 20px rgba(0,0,0,0.3)", fontSize: 14, fontWeight: 600,
             whiteSpace: "nowrap" as const,
           }}>
-            <span>Acțiune efectuată</span>
+            <span>{t("action_done")}</span>
             <button
               onClick={handleGeneralUndo}
               style={{ padding: "6px 14px", background: "#fb923c", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700 }}
             >
-              ↩️ Undo
+              {t("undo")}
             </button>
           </div>
         )}
 
         {/* Active Queue */}
         {loading ? (
-          <p style={s.muted}>Se încarcă coada...</p>
+          <p style={s.muted}>{t("loading")}</p>
         ) : activeEntries.length === 0 && expiredEntries.length === 0 && recentEntries.length === 0 ? (
-          <div style={s.emptyState}><div style={{ fontSize: 48 }}>🎉</div><p>Coada este goală</p></div>
+          <div style={s.emptyState}><div style={{ fontSize: 48 }}>🎉</div><p>{t("queue_empty")}</p></div>
         ) : (
           <>
             {activeEntries.length > 0 && (
@@ -1009,7 +1011,7 @@ export default function DashboardPage() {
             {expiredEntries.length > 0 && (
               <div style={{ marginTop: 20 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#ef4444", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 8 }}>
-                  ⌛ Expirat / No-show ({expiredEntries.length})
+                  {t("expired_section").replace("{count}", String(expiredEntries.length))}
                 </div>
                 <div style={s.tableWrap}>
                   {expiredEntries.map((entry, i) => (
@@ -1037,7 +1039,7 @@ export default function DashboardPage() {
             {recentEntries.length > 0 && (
               <div style={{ marginTop: 20 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-                  ↩️ Acțiuni recente (undo disponibil)
+                  {t("recent_section")}
                 </div>
                 <div style={{ ...s.tableWrap, opacity: 0.85 }}>
                   {recentEntries.map((entry, i) => (
@@ -1064,7 +1066,7 @@ export default function DashboardPage() {
         )}
 
         <p style={s.refresh}>
-          {sseConnected ? "🟢 Live updates active" : "🔴 Reconnecting... (polling la 15s)"}
+          {sseConnected ? t("live_updates_active") : t("reconnecting_polling")}
         </p>
 
         <div style={{ textAlign: "center", padding: "16px", fontSize: 12, color: "#9ca3af", borderTop: "1px solid #f3f4f6", marginTop: 24 }}>
@@ -1111,6 +1113,7 @@ type EntryRowProps = {
 };
 
 function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction, onSeat, onUndo, onStartEdit, onEditChange, onEditSave, onEditCancel }: EntryRowProps) {
+  const { t } = useTranslation();
   const now = Date.now();
   const isLongWait = entry.status === "WAITING" && now - new Date(entry.createdAt).getTime() > 30 * 60 * 1000;
   const locallyExpired =
@@ -1154,19 +1157,19 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
       <div style={{ minWidth: 130, textAlign: "center" as const }}>
         {entry.status === "NO_SHOW_CONFIRM" && (
           <>
-            <span style={{ ...s.badge, background: "#fee2e2", color: "#991b1b" }}>⌛ Neprezentare (confirmare)</span>
+            <span style={{ ...s.badge, background: "#fee2e2", color: "#991b1b" }}>⌛ {t("status_NO_SHOW_CONFIRM")}</span>
             {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
           </>
         )}
         {entry.status === "NO_SHOW_ARRIVAL" && (
           <>
-            <span style={{ ...s.badge, background: "#ffedd5", color: "#9a3412" }}>⌛ Neprezentare (sosire)</span>
+            <span style={{ ...s.badge, background: "#ffedd5", color: "#9a3412" }}>⌛ {t("status_NO_SHOW_ARRIVAL")}</span>
             {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
           </>
         )}
         {entry.status === "CALLED" && !locallyExpired && (
           <>
-            <span style={{ ...s.badge, background: "#fed7aa", color: "#9a3412" }}>📲 Chemat</span>
+            <span style={{ ...s.badge, background: "#fed7aa", color: "#9a3412" }}>📲 {t("status_CALLED")}</span>
             {entry.confirmDeadlineAt && (
               <div style={{ marginTop: 4 }}>
                 <CountdownTimer deadline={entry.confirmDeadlineAt} totalSec={120} />
@@ -1176,7 +1179,7 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
         )}
         {entry.status === "CALLED" && locallyExpired && (
           <>
-            <span style={{ ...s.badge, background: "#fee2e2", color: "#991b1b" }}>⏰ Expirat - confirmare</span>
+            <span style={{ ...s.badge, background: "#fee2e2", color: "#991b1b" }}>⏰ {t("status_CALLED")} ({t("expired_for")})</span>
             {entry.confirmDeadlineAt && (
               <div style={{ marginTop: 3 }}>
                 <ExpiredTimer since={entry.confirmDeadlineAt} />
@@ -1186,7 +1189,7 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
         )}
         {entry.status === "CONFIRMED" && !locallyExpired && (
           <>
-            <span style={{ ...s.badge, background: "#bbf7d0", color: "#166534" }}>✅ Confirmat</span>
+            <span style={{ ...s.badge, background: "#bbf7d0", color: "#166534" }}>✅ {t("status_CONFIRMED")}</span>
             {entry.arrivalDeadlineAt && (
               <div style={{ marginTop: 4 }}>
                 <CountdownTimer deadline={entry.arrivalDeadlineAt} totalSec={300} />
@@ -1196,7 +1199,7 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
         )}
         {entry.status === "CONFIRMED" && locallyExpired && (
           <>
-            <span style={{ ...s.badge, background: "#ffedd5", color: "#9a3412" }}>⏰ Expirat - prezentare</span>
+            <span style={{ ...s.badge, background: "#ffedd5", color: "#9a3412" }}>⏰ {t("status_CONFIRMED")} ({t("expired_for")})</span>
             {entry.arrivalDeadlineAt && (
               <div style={{ marginTop: 3 }}>
                 <ExpiredTimer since={entry.arrivalDeadlineAt} />
@@ -1206,19 +1209,19 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
         )}
         {entry.status === "WAITING" && (
           <>
-            <span style={{ ...s.badge }}>⏳ În așteptare</span>
+            <span style={{ ...s.badge }}>⏳ {t("status_WAITING")}</span>
             {isLongWait && (
               <div style={{ marginTop: 4 }}>
-                <span style={{ ...s.badge, background: "#fed7aa", color: "#9a3412" }}>🕐 Asteptare lunga</span>
+                <span style={{ ...s.badge, background: "#fed7aa", color: "#9a3412" }}>{t("long_wait")}</span>
               </div>
             )}
           </>
         )}
         {entry.status === "SEATED" && (
-          <span style={{ ...s.badge, background: "#e0f2fe", color: "#0369a1" }}>🪑 Așezat</span>
+          <span style={{ ...s.badge, background: "#e0f2fe", color: "#0369a1" }}>🪑 {t("status_SEATED")}</span>
         )}
         {entry.status === "SKIPPED" && (
-          <span style={{ ...s.badge, background: "#f3f4f6", color: "#6b7280" }}>⏭ Sărit</span>
+          <span style={{ ...s.badge, background: "#f3f4f6", color: "#6b7280" }}>⏭ {t("status_SKIPPED")}</span>
         )}
         {!["NO_SHOW_CONFIRM","NO_SHOW_ARRIVAL","CALLED","CONFIRMED","WAITING","SEATED","SKIPPED"].includes(entry.status) && (
           <span style={s.badge}>{entry.status}</span>
@@ -1229,59 +1232,59 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const }}>
         {entry.status === "WAITING" && (
           <button onClick={() => onAction(entry.id, "call")} style={{ ...s.actionBtn, background: "#ea580c" }}>
-            📲 Cheamă
+            {t("call_action")}
           </button>
         )}
         {["WAITING", "CALLED", "CONFIRMED"].includes(entry.status) && (
           <>
-            <button onClick={() => onSeat(entry)} style={{ ...s.actionBtn, background: "#2563eb" }}>Așează</button>
-            <button onClick={() => onAction(entry.id, "skip")} style={{ ...s.actionBtn, background: "#9ca3af" }}>Sari peste</button>
+            <button onClick={() => onSeat(entry)} style={{ ...s.actionBtn, background: "#2563eb" }}>{t("seat_action")}</button>
+            <button onClick={() => onAction(entry.id, "skip")} style={{ ...s.actionBtn, background: "#9ca3af" }}>{t("skip_action")}</button>
           </>
         )}
         {["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(entry.status) && (entry.callAgainCount ?? 0) < 1 && (
           <button onClick={() => onAction(entry.id, "call-again")} style={{ ...s.actionBtn, background: "#7c3aed" }}>
-            🔄 Cheamă din nou
+            {t("call_again_action")}
           </button>
         )}
         {/* Undo buttons for SEATED */}
         {entry.status === "SEATED" && (
           <>
             <button onClick={() => onUndo(entry.id, "undo-seated")} style={{ ...s.actionBtn, background: "#0891b2" }}>
-              ↩️ Undo Seat
+              {t("undo_seat")}
             </button>
             <button onClick={() => onUndo(entry.id, "re-call")} style={{ ...s.actionBtn, background: "#7c3aed" }}>
-              📲 Re-call
+              {t("re_call")}
             </button>
           </>
         )}
         {/* Undo button for SKIPPED */}
         {entry.status === "SKIPPED" && (
           <button onClick={() => onUndo(entry.id, "undo-skipped")} style={{ ...s.actionBtn, background: "#0891b2" }}>
-            ↩️ Undo Skip
+            {t("undo_skip")}
           </button>
         )}
         {["WAITING", "CALLED", "CONFIRMED", "NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(entry.status) && (
           <button onClick={() => onStartEdit(entry)} style={{ ...s.actionBtn, background: "#6b7280" }}>
-            ✏️ Editează
+            {t("edit_action")}
           </button>
         )}
       </div>
       {editingId === entry.id && (
         <div style={{ width: "100%", background: "#f9fafb", borderTop: "1px solid #e5e7eb", padding: "12px 16px", display: "flex", gap: 8, flexWrap: "wrap" as const, alignItems: "flex-end", marginTop: 8 }}>
           <div style={s.formGroup}>
-            <label style={s.formLabel}>Nume</label>
-            <input value={editForm.guestName} onChange={e => onEditChange({ ...editForm, guestName: e.target.value })} style={s.formInput} placeholder="Nume" />
+            <label style={s.formLabel}>{t("field_name")}</label>
+            <input value={editForm.guestName} onChange={e => onEditChange({ ...editForm, guestName: e.target.value })} style={s.formInput} placeholder={t("field_name")} />
           </div>
           <div style={s.formGroup}>
-            <label style={s.formLabel}>Persoane</label>
+            <label style={s.formLabel}>{t("field_persons")}</label>
             <input type="number" min={1} max={20} value={editForm.partySize} onChange={e => onEditChange({ ...editForm, partySize: Number(e.target.value) })} style={{ ...s.formInput, width: 70 }} />
           </div>
           <div style={s.formGroup}>
-            <label style={s.formLabel}>Telefon</label>
+            <label style={s.formLabel}>{t("field_phone")}</label>
             <input value={editForm.phoneE164} onChange={e => onEditChange({ ...editForm, phoneE164: e.target.value })} style={s.formInput} placeholder="+40..." />
           </div>
-          <button onClick={() => onEditSave(entry.id)} disabled={editSubmitting} style={s.submitBtn}>{editSubmitting ? "..." : "Salvează"}</button>
-          <button onClick={onEditCancel} style={s.cancelBtn}>Anulează</button>
+          <button onClick={() => onEditSave(entry.id)} disabled={editSubmitting} style={s.submitBtn}>{editSubmitting ? "..." : t("save_action")}</button>
+          <button onClick={onEditCancel} style={s.cancelBtn}>{t("cancel")}</button>
         </div>
       )}
     </div>

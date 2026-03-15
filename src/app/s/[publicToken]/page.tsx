@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type EntryData = {
   status: string;
@@ -22,8 +24,8 @@ function useCountdown(deadline?: string) {
     if (!deadline) { setSecs(null); return; }
     const update = () => setSecs(Math.max(0, Math.floor((new Date(deadline).getTime() - Date.now()) / 1000)));
     update();
-    const t = setInterval(update, 1000);
-    return () => clearInterval(t);
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
   }, [deadline]);
   return secs;
 }
@@ -43,7 +45,7 @@ function CountdownRing({ seconds, total }: { seconds: number; total: number }) {
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
         <span style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1 }}>{m}:{s.toString().padStart(2, "0")}</span>
-        <span style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>rămase</span>
+        <span style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>min</span>
       </div>
     </div>
   );
@@ -66,6 +68,7 @@ function statusStyle(st: string): React.CSSProperties {
 
 export default function StatusPage() {
   const { publicToken } = useParams<{ publicToken: string }>();
+  const { t } = useTranslation();
   const [data, setData] = useState<EntryData | null>(null);
   const [error, setError] = useState("");
   const [canceling, setCanceling] = useState(false);
@@ -78,15 +81,15 @@ export default function StatusPage() {
   const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch(`/api/public/entry/${publicToken}`);
-      if (!res.ok) { setError("Rezervarea nu a fost găsită."); return; }
+      if (!res.ok) { setError(t("status_not_found")); return; }
       setData(await res.json());
-    } catch { setError("Eroare de rețea."); }
-  }, [publicToken]);
+    } catch { setError(t("status_network_error")); }
+  }, [publicToken, t]);
 
   useEffect(() => {
     fetchStatus();
-    const t = setInterval(fetchStatus, 15000);
-    return () => clearInterval(t);
+    const timer = setInterval(fetchStatus, 15000);
+    return () => clearInterval(timer);
   }, [fetchStatus]);
 
   async function handleConfirm() {
@@ -113,7 +116,7 @@ export default function StatusPage() {
   );
   if (!data) return (
     <div style={{ ...s.page, background: FOOD_BG }}>
-      <div style={s.card}><p style={s.muted}>Se încarcă...</p></div>
+      <div style={s.card}><p style={s.muted}>{t("join_loading")}</p></div>
     </div>
   );
 
@@ -122,21 +125,17 @@ export default function StatusPage() {
   return (
     <div style={{ ...s.page, background: FOOD_BG }}>
       <FoodDecorations />
+      <div style={{ position: "fixed", top: 16, right: 16, zIndex: 50 }}>
+        <LocaleSwitcher />
+      </div>
       <div style={s.card}>
         <div style={s.restName}>{data.restaurantName}</div>
         <div style={s.guest}>
-          {data.guestName && <>👤 {data.guestName} · </>}👥 {data.partySize} {data.partySize === 1 ? "persoană" : "persoane"}
+          {data.guestName && <>👤 {data.guestName} · </>}👥 {data.partySize} {data.partySize === 1 ? t("join_person") : t("join_persons")}
         </div>
 
         <div style={statusStyle(data.status)}>
-          {data.status === "WAITING"         && "⏳ În așteptare"}
-          {data.status === "CALLED"          && "📲 Masa ta e gata!"}
-          {data.status === "CONFIRMED"       && "✅ Confirmat"}
-          {data.status === "SEATED"          && "🪑 La masă"}
-          {data.status === "NO_SHOW_CONFIRM" && "⌛ Timp de confirmare expirat"}
-          {data.status === "NO_SHOW_ARRIVAL" && "⌛ Nu te-ai prezentat la timp"}
-          {data.status === "CANCELED"        && "❌ Anulat"}
-          {data.status === "SKIPPED"         && "⏭️ Sărit"}
+          {t(`status_badge_${data.status}`) || data.status}
         </div>
 
         {data.status === "WAITING" && data.position != null && (
@@ -144,29 +143,29 @@ export default function StatusPage() {
             <div style={s.posNum}>{data.position === 1 ? "1" : data.position - 1}</div>
             <div style={s.posLbl}>
               {data.position === 1
-                ? <span style={{ whiteSpace: "pre-line" }}>{"🎉 Ești primul în listă\nTe anunțăm când masa este gata"}</span>
-                : `grup${data.position - 1 === 1 ? "" : "uri"} înaintea ta`}
+                ? <span style={{ whiteSpace: "pre-line" }}>{t("status_first_in_line")}</span>
+                : `${data.position - 1} ${data.position - 1 === 1 ? t("status_group_before") : t("status_groups_before")}`}
             </div>
           </div>
         )}
 
         {data.status === "WAITING" && (
           <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: "10px", padding: "12px 16px", fontSize: "14px", fontWeight: 600, color: "#166534", textAlign: "center", margin: "0 0 12px" }}>
-            Nu este nevoie să aștepți la intrare<br />Te anunțăm pe WhatsApp
+            {t("status_waiting_msg")}
           </div>
         )}
 
         {data.status === "CALLED" && (
           <div>
             <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: "8px", padding: "8px 12px", fontSize: "13px", fontWeight: 600, color: "#166534", textAlign: "center", margin: "0 0 10px" }}>
-              📱 WhatsApp trimis
+              {t("status_whatsapp_sent")}
             </div>
             <p style={{ textAlign: "center", fontSize: 14, color: "#9a3412", fontWeight: 600, margin: "0 0 12px" }}>
-              Confirmă că vii la restaurant!
+              {t("status_confirm_prompt")}
             </p>
             {confirmSecs != null && <CountdownRing seconds={confirmSecs} total={120} />}
             <button onClick={handleConfirm} disabled={confirming} style={s.confirmBtn}>
-              {confirming ? "Se confirmă..." : "✅ Confirm că vin!"}
+              {confirming ? t("status_confirming") : t("status_confirm_btn")}
             </button>
           </div>
         )}
@@ -174,66 +173,65 @@ export default function StatusPage() {
         {data.status === "CONFIRMED" && (
           <div>
             {arrivalSecs != null && arrivalSecs > 0 && <CountdownRing seconds={arrivalSecs} total={300} />}
-            <div style={s.successBox}>🏃 Vino cât mai repede! Masa îți este rezervată.</div>
+            <div style={s.successBox}>{t("status_hurry")}</div>
           </div>
         )}
 
         {data.status === "SEATED" && (
-          <div style={s.successBox}>🎉 Poftă bună! Bucurați-vă de masă.</div>
+          <div style={s.successBox}>{t("status_enjoy")}</div>
         )}
 
         {data.status === "NO_SHOW_CONFIRM" && (
-          <div style={s.warnBox}>⏰ Nu ai confirmat în timp util. Locul tău a fost dat mai departe. Contactați personalul dacă doriți să vă reinregistrați.</div>
+          <div style={s.warnBox}>{t("status_no_show_confirm_msg")}</div>
         )}
 
         {data.status === "NO_SHOW_ARRIVAL" && (
-          <div style={s.warnBox}>⏰ Nu te-ai prezentat la restaurant în timp util. Locul tău a fost dat mai departe. Contactați personalul dacă doriți să vă reinregistrați.</div>
+          <div style={s.warnBox}>{t("status_no_show_arrival_msg")}</div>
         )}
 
         {data.status === "CANCELED" && (
           <div style={{ ...s.warnBox, background: "#f3f4f6", color: "#6b7280", borderColor: "#e5e7eb" }}>
-            Rezervarea a fost anulată.
+            {t("status_canceled_msg")}
           </div>
         )}
 
         {data.status === "SKIPPED" && (
-          <div style={s.warnBox}>Ai fost sărit din coadă. Contactați personalul.</div>
+          <div style={s.warnBox}>{t("status_skipped_msg")}</div>
         )}
 
         {isActive && (
           <button onClick={() => setShowCancelModal(true)} disabled={canceling} style={s.cancelBtn}>
-            {canceling ? "Se anulează..." : "Anulează rezervarea"}
+            {canceling ? t("status_canceling") : t("status_cancel_btn")}
           </button>
         )}
 
-        {isActive && <p style={s.refresh}>Auto-refresh la 15 sec</p>}
+        {isActive && <p style={s.refresh}>{t("status_auto_refresh")}</p>}
 
         <div style={{ textAlign: "center", padding: "16px", fontSize: 12, color: "#9ca3af", borderTop: "1px solid #f3f4f6", marginTop: 24 }}>
           LineHop™ 2026
         </div>
       </div>
 
-      {/* Cancel Confirmation Modal */}
       {showCancelModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowCancelModal(false)}>
           <div style={{ background: "#fff", borderRadius: 20, padding: 32, maxWidth: 380, width: "90%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", textAlign: "center" }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1a1a", marginBottom: 12 }}>Anulezi rezervarea?</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1a1a", marginBottom: 12 }}>{t("status_cancel_modal_title")}</div>
             <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 24, lineHeight: 1.5 }}>
-              Ești sigur că vrei să anulezi? Nu vei mai putea fi adăugat în această coadă astăzi.
+              {t("status_cancel_modal_body")}
             </p>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
               <button
                 onClick={() => setShowCancelModal(false)}
                 style={{ padding: "10px 24px", background: "transparent", color: "#6b7280", border: "1.5px solid #e5e7eb", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 600 }}
               >
-                Nu, rămân
+                {t("status_cancel_modal_no")}
               </button>
               <button
                 onClick={handleCancel}
                 style={{ padding: "10px 24px", background: "#dc2626", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
               >
-                Da, anulează
+                {t("status_cancel_modal_yes")}
               </button>
             </div>
           </div>
@@ -272,7 +270,6 @@ const s: Record<string, React.CSSProperties> = {
   posBlock: { background: "#fff8f0", border: "1.5px solid #fed7aa", borderRadius: "14px", padding: "20px 16px", margin: "0 0 16px" },
   posNum: { fontSize: "64px", fontWeight: 900, color: "#ea580c", lineHeight: 1 },
   posLbl: { fontSize: "15px", color: "#9a3412", fontWeight: 600, marginTop: "4px" },
-  eta: { display: "inline-block", marginTop: "10px", padding: "6px 16px", background: "#fef3c7", color: "#92400e", borderRadius: "999px", fontSize: "13px", fontWeight: 700 },
   confirmBtn: { display: "block", width: "100%", padding: "16px", background: "linear-gradient(135deg, #16a34a, #15803d)", color: "#fff", border: "none", borderRadius: "12px", fontSize: "17px", fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(22,163,74,0.3)", marginBottom: "8px" },
   successBox: { background: "#f0fdf4", border: "1.5px solid #bbf7d0", color: "#166534", borderRadius: "10px", padding: "14px 16px", fontSize: "15px", fontWeight: 600, margin: "8px 0" },
   warnBox: { background: "#fee2e2", border: "1.5px solid #fecaca", color: "#991b1b", borderRadius: "10px", padding: "14px 16px", fontSize: "14px", fontWeight: 600, margin: "8px 0" },

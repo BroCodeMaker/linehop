@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import AdminNav from "@/components/AdminNav";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface HistoryEntry {
   id: string;
@@ -16,16 +17,6 @@ interface HistoryEntry {
   cancelAfterMinutes: number | null;
 }
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  WAITING:   { label: "Așteptare", color: "#f59e0b" },
-  CALLED:    { label: "Chemat",    color: "#3b82f6" },
-  CONFIRMED: { label: "Confirmat", color: "#8b5cf6" },
-  SEATED:    { label: "Așezat",    color: "#10b981" },
-  CANCELLED: { label: "Anulat",    color: "#ef4444" },
-  EXPIRED:   { label: "Expirat",   color: "#9ca3af" },
-  SKIPPED:   { label: "Sărit",     color: "#f97316" },
-};
-
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
 }
@@ -37,6 +28,7 @@ function formatDate(iso: string) {
 export default function HistoryPage() {
   const params = useParams();
   const restaurantId = params.restaurantId as string;
+  const { t } = useTranslation();
 
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [total, setTotal] = useState(0);
@@ -66,6 +58,12 @@ export default function HistoryPage() {
 
   const todayStr = new Date().toISOString().split("T")[0];
 
+  const statusColors: Record<string, string> = {
+    WAITING: "#f59e0b", CALLED: "#3b82f6", CONFIRMED: "#8b5cf6",
+    SEATED: "#10b981", CANCELLED: "#ef4444", CANCELED: "#ef4444",
+    EXPIRED: "#9ca3af", SKIPPED: "#f97316",
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#faf7f4", fontFamily: "system-ui, sans-serif" }}>
       <AdminNav restaurantId={restaurantId} />
@@ -74,8 +72,8 @@ export default function HistoryPage() {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#1a1a1a" }}>📋 Istoric coadă</h1>
-            <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: 13 }}>{total} intrări total</p>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#1a1a1a" }}>{t("history_title")}</h1>
+            <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: 13 }}>{t("history_total").replace("{total}", String(total))}</p>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <input
@@ -90,7 +88,7 @@ export default function HistoryPage() {
                 onClick={() => { setDate(""); setPage(1); }}
                 style={{ padding: "7px 12px", borderRadius: 8, border: "1.5px solid #e5e7eb", fontSize: 13, background: "#fff", cursor: "pointer", color: "#6b7280" }}
               >
-                Toate
+                {t("all")}
               </button>
             )}
           </div>
@@ -99,31 +97,32 @@ export default function HistoryPage() {
         {/* Table */}
         <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #f0e8dc", overflow: "hidden" }}>
           {loading ? (
-            <div style={{ padding: 40, textAlign: "center", color: "#9ca3af" }}>Se încarcă...</div>
+            <div style={{ padding: 40, textAlign: "center", color: "#9ca3af" }}>{t("history_loading")}</div>
           ) : entries.length === 0 ? (
-            <div style={{ padding: 40, textAlign: "center", color: "#9ca3af" }}>Nicio intrare găsită.</div>
+            <div style={{ padding: 40, textAlign: "center", color: "#9ca3af" }}>{t("history_empty")}</div>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#f9fafb", borderBottom: "1px solid #f0e8dc" }}>
-                  {["Nume", "Persoane", "Status", "Intrat la", "Așteptat", "Anulat după"].map((h) => (
+                  {[t("history_col_name"), t("history_col_persons"), t("history_col_status"), t("history_col_joined"), t("history_col_waited"), t("history_col_canceled_after")].map((h) => (
                     <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#6b7280", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {entries.map((e, i) => {
-                  const st = STATUS_LABELS[e.status] ?? { label: e.status, color: "#9ca3af" };
+                  const color = statusColors[e.status] ?? "#9ca3af";
+                  const label = t(`status_${e.status}`) || e.status;
                   return (
                     <tr key={e.id} style={{ borderBottom: i < entries.length - 1 ? "1px solid #f9fafb" : "none", background: i % 2 === 0 ? "#fff" : "#fdfcfb" }}>
                       <td style={{ padding: "10px 14px", fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>
                         {e.guestName}
-                        {e.isWalkIn && <span style={{ marginLeft: 6, fontSize: 11, color: "#9ca3af", fontWeight: 400 }}>(walk-in)</span>}
+                        {e.isWalkIn && <span style={{ marginLeft: 6, fontSize: 11, color: "#9ca3af", fontWeight: 400 }}>{t("history_walk_in")}</span>}
                       </td>
                       <td style={{ padding: "10px 14px", fontSize: 14, color: "#374151" }}>👥 {e.partySize}</td>
                       <td style={{ padding: "10px 14px" }}>
-                        <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 700, background: st.color + "18", color: st.color }}>
-                          {st.label}
+                        <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 700, background: color + "18", color }}>
+                          {label}
                         </span>
                       </td>
                       <td style={{ padding: "10px 14px", fontSize: 13, color: "#6b7280", whiteSpace: "nowrap" }}>
@@ -146,9 +145,9 @@ export default function HistoryPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 20 }}>
-            <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} style={{ padding: "7px 16px", borderRadius: 8, border: "1.5px solid #e5e7eb", fontSize: 14, cursor: page <= 1 ? "not-allowed" : "pointer", opacity: page <= 1 ? 0.4 : 1, background: "#fff" }}>← Prev</button>
+            <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} style={{ padding: "7px 16px", borderRadius: 8, border: "1.5px solid #e5e7eb", fontSize: 14, cursor: page <= 1 ? "not-allowed" : "pointer", opacity: page <= 1 ? 0.4 : 1, background: "#fff" }}>{t("history_prev")}</button>
             <span style={{ padding: "7px 14px", fontSize: 14, color: "#6b7280" }}>{page} / {totalPages}</span>
-            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} style={{ padding: "7px 16px", borderRadius: 8, border: "1.5px solid #e5e7eb", fontSize: 14, cursor: page >= totalPages ? "not-allowed" : "pointer", opacity: page >= totalPages ? 0.4 : 1, background: "#fff" }}>Next →</button>
+            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} style={{ padding: "7px 16px", borderRadius: 8, border: "1.5px solid #e5e7eb", fontSize: 14, cursor: page >= totalPages ? "not-allowed" : "pointer", opacity: page >= totalPages ? 0.4 : 1, background: "#fff" }}>{t("history_next")}</button>
           </div>
         )}
       </div>

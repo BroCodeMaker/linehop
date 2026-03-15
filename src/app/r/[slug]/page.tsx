@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type RestaurantInfo = {
   name: string;
@@ -22,6 +24,7 @@ const FOOD_BG = `radial-gradient(ellipse at 10% 20%, rgba(251,146,60,0.10) 0%, t
 export default function JoinPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [info, setInfo] = useState<RestaurantInfo | null>(null);
   const [loadingInfo, setLoadingInfo] = useState(true);
@@ -43,8 +46,8 @@ export default function JoinPage() {
 
   useEffect(() => {
     fetchInfo();
-    const t = setInterval(fetchInfo, 20000);
-    return () => clearInterval(t);
+    const timer = setInterval(fetchInfo, 20000);
+    return () => clearInterval(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
@@ -61,7 +64,7 @@ export default function JoinPage() {
       const data = await res.json();
       if (!res.ok) {
         if (data.blocked) {
-          setError("Acest număr de telefon este deja înregistrat sau a participat la lista de așteptare.");
+          setError(t("join_phone_blocked"));
         } else {
           setError(data.error || "Something went wrong");
         }
@@ -77,24 +80,25 @@ export default function JoinPage() {
 
   if (loadingInfo) return (
     <div style={{ ...s.page, background: FOOD_BG }}>
-      <div style={s.card}><p style={s.muted}>Se încarcă...</p></div>
+      <div style={s.card}><p style={s.muted}>{t("join_loading")}</p></div>
     </div>
   );
 
   if (!info) return (
     <div style={{ ...s.page, background: FOOD_BG }}>
-      <div style={s.card}><p style={{ color: "#dc2626" }}>Restaurant negăsit.</p></div>
+      <div style={s.card}><p style={{ color: "#dc2626" }}>{t("join_not_found")}</p></div>
     </div>
   );
 
   if (info.status === "CLOSED") return (
     <div style={{ ...s.page, background: FOOD_BG }}>
       <FoodDecorations />
+      <LocaleSwitcherFloat />
       <div style={s.card}>
         <div style={s.headerEmoji}>🌙</div>
         <h1 style={s.title}>{info.name}</h1>
-        <div style={{ ...s.banner, background: "#f3f4f6", color: "#6b7280" }}>Restaurantul este închis</div>
-        <p style={s.muted}>Ne vedem mâine! Vă mulțumim pentru vizită.</p>
+        <div style={{ ...s.banner, background: "#f3f4f6", color: "#6b7280" }}>{t("join_closed_title")}</div>
+        <p style={s.muted}>{t("join_closed_msg")}</p>
       </div>
     </div>
   );
@@ -102,24 +106,25 @@ export default function JoinPage() {
   if (info.status === "PAUSED") return (
     <div style={{ ...s.page, background: FOOD_BG }}>
       <FoodDecorations />
+      <LocaleSwitcherFloat />
       <div style={s.card}>
         <div style={s.headerEmoji}>⏸️</div>
         <h1 style={s.title}>{info.name}</h1>
-        <div style={{ ...s.banner, background: "#fef3c7", color: "#92400e" }}>Lista de așteptare este temporar în pauză</div>
-        <p style={s.muted}>Vă rugăm să reveniți în câteva minute sau să contactați personalul restaurantului.</p>
+        <div style={{ ...s.banner, background: "#fef3c7", color: "#92400e" }}>{t("join_paused_title")}</div>
+        <p style={s.muted}>{t("join_paused_msg")}</p>
       </div>
     </div>
   );
 
-  // Lista închisă — clienții existenți în coadă nu sunt afectați
   if (info.listClosed) return (
     <div style={{ ...s.page, background: FOOD_BG }}>
       <FoodDecorations />
+      <LocaleSwitcherFloat />
       <div style={s.card}>
         <div style={s.headerEmoji}>🔒</div>
         <h1 style={s.title}>{info.name}</h1>
-        <div style={{ ...s.banner, background: "#f3f4f6", color: "#374151" }}>Lista de așteptare este închisă momentan</div>
-        <p style={s.muted}>Reveniți mai târziu sau contactați personalul restaurantului.</p>
+        <div style={{ ...s.banner, background: "#f3f4f6", color: "#374151" }}>{t("join_list_closed_title")}</div>
+        <p style={s.muted}>{t("join_list_closed_msg")}</p>
       </div>
     </div>
   );
@@ -127,17 +132,18 @@ export default function JoinPage() {
   if (info.queueFull) return (
     <div style={{ ...s.page, background: FOOD_BG }}>
       <FoodDecorations />
+      <LocaleSwitcherFloat />
       <div style={s.card}>
         <div style={s.headerEmoji}>⏳</div>
         <h1 style={s.title}>{info.name}</h1>
         <div style={{ ...s.banner, background: "#fee2e2", color: "#991b1b" }}>
-          Lista de așteptare este plină
+          {t("join_queue_full_title")}
         </div>
         <p style={{ fontSize: 15, color: "#374151", textAlign: "center", margin: "16px 0", lineHeight: 1.6 }}>
-          În acest moment sunt <strong>{info.queueLength} persoane</strong> în fața dumneavoastră.
+          {t("join_queue_full_body").replace("{count}", String(info.queueLength))}
         </p>
         <p style={s.muted}>
-          Vă rugăm să reveniți mai târziu. Când un loc se eliberează, lista se va redeschide automat.
+          {t("join_queue_full_msg")}
         </p>
       </div>
     </div>
@@ -146,69 +152,76 @@ export default function JoinPage() {
   if (info.status === "OPEN") return (
     <div style={{ ...s.page, background: FOOD_BG }}>
       <FoodDecorations />
+      <LocaleSwitcherFloat />
       <div style={s.card}>
         <div style={s.headerEmoji}>🍽️</div>
         <h1 style={s.title}>{info.name}</h1>
         <div style={{ ...s.banner, background: "#fef3c7", color: "#92400e" }}>
-          Vă rugăm să intrați pentru alocarea locului la masă
+          {t("join_open_title")}
         </div>
         <p style={{ fontSize: 15, color: "#374151", textAlign: "center", margin: "16px 0" }}>
-          În acest moment nu există listă de așteptare.
+          {t("join_open_msg")}
         </p>
       </div>
     </div>
   );
 
-  // FULL
+  // FULL — show waitlist form
   return (
     <div style={{ ...s.page, background: FOOD_BG }}>
       <FoodDecorations />
+      <LocaleSwitcherFloat />
       <div style={s.card}>
         <div style={s.headerEmoji}>🍽️</div>
         <h1 style={s.title}>{info.name}</h1>
-        <div style={{ ...s.banner, background: "#fef3c7", color: "#92400e" }}>🔴 Restaurantul este plin momentan</div>
+        <div style={{ ...s.banner, background: "#fef3c7", color: "#92400e" }}>{t("join_full_title")}</div>
 
         <div style={s.queueInfo}>
           <div style={s.qStat}>
             <span style={s.qNum}>{info.queueLength}</span>
-            <span style={s.qLabel}>grupuri în coadă</span>
+            <span style={s.qLabel}>{t("join_queue_count")}</span>
           </div>
           <div style={s.qDivider} />
           <div style={s.qStat}>
             <span style={s.qNum}>~{info.estimatedWaitMinutes}</span>
-            <span style={s.qLabel}>Timp estimat</span>
+            <span style={s.qLabel}>{t("join_estimated_wait")}</span>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} style={s.form}>
-          <label style={s.label}>Număr de persoane</label>
+          <label style={s.label}>{t("join_party_size")}</label>
           <select value={partySize} onChange={(e) => setPartySize(Number(e.target.value))} style={s.input} required>
             {Array.from({ length: info.maxPartySize ?? 10 }, (_, i) => i + 1).map((n) => (
-              <option key={n} value={n}>{n} {n === 1 ? "persoană" : "persoane"}</option>
+              <option key={n} value={n}>{n} {n === 1 ? t("join_person") : t("join_persons")}</option>
             ))}
           </select>
 
-          <label style={s.label}>Telefon WhatsApp</label>
+          <label style={s.label}>{t("join_phone")}</label>
           <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07xx xxx xxx" style={s.input} required />
 
-          <label style={s.label}>Nume (opțional)</label>
-          <input type="text" value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Numele tău" style={s.input} />
+          <label style={s.label}>{t("join_name")}</label>
+          <input type="text" value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder={t("join_name_placeholder")} style={s.input} />
 
-          <label style={s.label}>Notă (opțional)</label>
-          <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="ex: scaun înalt, terasă..." style={s.input} maxLength={200} />
+          <label style={s.label}>{t("join_note")}</label>
+          <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("join_note_placeholder")} style={s.input} maxLength={200} />
 
           {error && <p style={s.error}>{error}</p>}
 
           <button type="submit" style={s.btn} disabled={submitting}>
-            {submitting ? "Se înscrie..." : "Intră în coadă →"}
+            {submitting ? t("join_submitting") : t("join_submit")}
           </button>
         </form>
 
-        <p style={s.muted}>Vei primi mesaj WhatsApp când masa ta este gata.</p>
-        <div style={{ textAlign: "center", padding: "16px", fontSize: 12, color: "#9ca3af", borderTop: "1px solid #f3f4f6", marginTop: 24 }}>
-          LineHop™ 2026
-        </div>
+        <p style={s.muted}>{t("join_whatsapp_note")}</p>
       </div>
+    </div>
+  );
+}
+
+function LocaleSwitcherFloat() {
+  return (
+    <div style={{ position: "fixed", top: 16, right: 16, zIndex: 50 }}>
+      <LocaleSwitcher />
     </div>
   );
 }

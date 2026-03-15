@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const FOOD_BG = `radial-gradient(ellipse at 5% 0%, rgba(251,146,60,0.12) 0%, transparent 40%),
   radial-gradient(ellipse at 95% 100%, rgba(234,179,8,0.08) 0%, transparent 40%), #fdf6ee`;
@@ -12,13 +14,6 @@ type Restaurant = {
   slug: string;
   status: string;
   createdAt: string;
-};
-
-const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
-  OPEN:   { bg: "#dcfce7", color: "#15803d", label: "Deschis" },
-  FULL:   { bg: "#fed7aa", color: "#9a3412", label: "Plin / Waitlist" },
-  PAUSED: { bg: "#fef3c7", color: "#92400e", label: "Pauză" },
-  CLOSED: { bg: "#f3f4f6", color: "#6b7280", label: "Închis" },
 };
 
 function toSlug(name: string): string {
@@ -34,6 +29,7 @@ function toSlug(name: string): string {
 
 export default function AppIndexPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -80,7 +76,6 @@ export default function AppIndexPage() {
         setCreateError(data.error ?? "Error creating restaurant");
         return;
       }
-      // Redirect to new restaurant dashboard
       router.push(`/app/${data.restaurant.id}/dashboard`);
     } finally {
       setCreating(false);
@@ -91,27 +86,28 @@ export default function AppIndexPage() {
     <div style={{ minHeight: "100vh", background: FOOD_BG, fontFamily: "system-ui, sans-serif" }}>
       {/* Header */}
       <div style={s.header}>
-        <span style={s.logo}>🍽️ WaitList Admin</span>
+        <span style={s.logo}>{t("app_title")}</span>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <LocaleSwitcher />
           <button onClick={() => setShowCreate(v => !v)} style={s.createBtn}>
-            ➕ Restaurant nou
+            {t("app_new_restaurant")}
           </button>
-          <button onClick={handleLogout} style={s.logoutBtn}>Logout</button>
+          <button onClick={handleLogout} style={s.logoutBtn}>{t("logout")}</button>
         </div>
       </div>
 
       <div style={s.body}>
-        <h1 style={s.pageTitle}>Restaurantele tale</h1>
+        <h1 style={s.pageTitle}>{t("app_your_restaurants")}</h1>
 
         {/* Create form */}
         {showCreate && (
           <div style={s.createCard}>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#374151", marginBottom: 16 }}>
-              🏪 Adaugă restaurant nou
+              {t("app_add_restaurant")}
             </div>
             <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={s.fieldGroup}>
-                <label style={s.label}>Nume restaurant *</label>
+                <label style={s.label}>{t("app_restaurant_name")}</label>
                 <input
                   required
                   value={createForm.name}
@@ -119,28 +115,28 @@ export default function AppIndexPage() {
                     const name = e.target.value;
                     setCreateForm(f => ({ ...f, name, slug: toSlug(name) }));
                   }}
-                  placeholder="ex: Pizza Roma"
+                  placeholder={t("app_restaurant_name_placeholder")}
                   style={s.input}
                 />
               </div>
               <div style={s.fieldGroup}>
-                <label style={s.label}>Slug URL (auto-generat)</label>
+                <label style={s.label}>{t("app_slug")}</label>
                 <input
                   value={createForm.slug}
                   onChange={e => setCreateForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))}
-                  placeholder="ex: pizza-roma"
+                  placeholder={t("app_slug_placeholder")}
                   style={s.input}
                 />
                 <span style={{ fontSize: 11, color: "#9ca3af" }}>
-                  Clienții vor accesa: /r/{createForm.slug || "slug-restaurant"}
+                  {t("app_clients_access")}{createForm.slug || "slug-restaurant"}
                 </span>
               </div>
               <div style={s.fieldGroup}>
-                <label style={s.label}>Adresă (opțional)</label>
+                <label style={s.label}>{t("app_address")}</label>
                 <input
                   value={createForm.address}
                   onChange={e => setCreateForm(f => ({ ...f, address: e.target.value }))}
-                  placeholder="ex: Str. Unirii 12, București"
+                  placeholder={t("app_address_placeholder")}
                   style={s.input}
                 />
               </div>
@@ -151,10 +147,10 @@ export default function AppIndexPage() {
               )}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
                 <button type="button" onClick={() => { setShowCreate(false); setCreateError(""); }} style={s.cancelBtn}>
-                  Anulează
+                  {t("cancel")}
                 </button>
                 <button type="submit" disabled={creating} style={s.submitBtn}>
-                  {creating ? "Se creează..." : "Creează restaurant"}
+                  {creating ? t("app_creating") : t("app_create")}
                 </button>
               </div>
             </form>
@@ -163,24 +159,25 @@ export default function AppIndexPage() {
 
         {/* Restaurant list */}
         {loading ? (
-          <div style={s.emptyState}>Se încarcă...</div>
+          <div style={s.emptyState}>{t("loading")}</div>
         ) : restaurants.length === 0 ? (
           <div style={s.emptyState}>
             <div style={{ fontSize: 56, marginBottom: 12 }}>🏪</div>
             <p style={{ fontSize: 18, fontWeight: 700, color: "#374151", marginBottom: 8 }}>
-              Nu ai niciun restaurant
+              {t("app_no_restaurants")}
             </p>
             <p style={{ color: "#9ca3af", marginBottom: 20 }}>
-              Creează primul tău restaurant pentru a începe
+              {t("app_no_restaurants_sub")}
             </p>
             <button onClick={() => setShowCreate(true)} style={s.submitBtn}>
-              ➕ Adaugă primul restaurant
+              {t("app_add_first")}
             </button>
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {restaurants.map(r => {
-              const statusCfg = STATUS_COLORS[r.status] ?? { bg: "#f3f4f6", color: "#6b7280", label: r.status };
+              const statusBg = ({ OPEN: "#dcfce7", FULL: "#fed7aa", PAUSED: "#fef3c7", CLOSED: "#f3f4f6" } as Record<string, string>)[r.status] ?? "#f3f4f6";
+              const statusColor = ({ OPEN: "#15803d", FULL: "#9a3412", PAUSED: "#92400e", CLOSED: "#6b7280" } as Record<string, string>)[r.status] ?? "#6b7280";
               return (
                 <button
                   key={r.id}
@@ -189,8 +186,8 @@ export default function AppIndexPage() {
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                     <span style={{ fontSize: 32 }}>🍽️</span>
-                    <span style={{ ...s.statusBadge, background: statusCfg.bg, color: statusCfg.color }}>
-                      {statusCfg.label}
+                    <span style={{ ...s.statusBadge, background: statusBg, color: statusColor }}>
+                      {t(`restStatus_${r.status}`) || r.status}
                     </span>
                   </div>
                   <div style={{ fontWeight: 800, fontSize: 18, color: "#111", marginBottom: 4, textAlign: "left" }}>
@@ -201,7 +198,7 @@ export default function AppIndexPage() {
                   </div>
                   <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "flex-end" }}>
                     <span style={{ fontSize: 13, color: "#ea580c", fontWeight: 700 }}>
-                      Deschide Dashboard →
+                      {t("app_open_dashboard")}
                     </span>
                   </div>
                 </button>
