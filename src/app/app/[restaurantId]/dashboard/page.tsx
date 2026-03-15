@@ -1006,6 +1006,7 @@ export default function DashboardPage() {
                       editForm={editForm}
                       editSubmitting={editSubmitting}
                       onAction={handleAction}
+                      onSeat={handleSeatClick}
                       onUndo={handleUndo}
                       onStartEdit={startEdit}
                       onEditChange={setEditForm}
@@ -1033,6 +1034,7 @@ export default function DashboardPage() {
                       editForm={editForm}
                       editSubmitting={editSubmitting}
                       onAction={handleAction}
+                      onSeat={handleSeatClick}
                       onUndo={handleUndo}
                       onStartEdit={startEdit}
                       onEditChange={setEditForm}
