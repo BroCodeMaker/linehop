@@ -199,6 +199,7 @@ export default function DashboardPage() {
   const [showErrorLog, setShowErrorLog] = useState(false);
   const [errorLogs, setErrorLogs] = useState<ErrorLogEntry[]>([]);
   const [loadingErrorLog, setLoadingErrorLog] = useState(false);
+  const [showDeployToast, setShowDeployToast] = useState(false);
   const [seatConfirmEntry, setSeatConfirmEntry] = useState<Entry | null>(null);
   const [undoState, setUndoState] = useState<Entry | null>(null);
   const sseRef = useRef<EventSource | null>(null);
@@ -242,6 +243,16 @@ export default function DashboardPage() {
   }, [fetchQueue, fetchRestStatus, fetchStats]);
 
   // SSE setup
+  // Deploy toast — show once per version
+  useEffect(() => {
+    const seenKey = `linehop_deploy_seen_${APP_VERSION}`;
+    if (!localStorage.getItem(seenKey)) {
+      setShowDeployToast(true);
+      localStorage.setItem(seenKey, "1");
+      setTimeout(() => setShowDeployToast(false), 6000);
+    }
+  }, []);
+
   useEffect(() => {
     let reconnectTimer: ReturnType<typeof setTimeout>;
 
@@ -705,6 +716,12 @@ export default function DashboardPage() {
           <button onClick={openQR} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#f0fdf4", color: "#166534", border: "2px solid #86efac" }}>
             📱 QR Code
           </button>
+          <button onClick={() => setShowSupport(true)} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#fff7ed", color: "#c2410c", border: "2px solid #fed7aa" }}>
+            🆘 Support
+          </button>
+          <button onClick={openErrorLog} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#f0f9ff", color: "#0369a1", border: "2px solid #bae6fd" }}>
+            📋 Error Log
+          </button>
           <button onClick={async () => {
             if (!confirm("Ștergi toată coada? (doar pentru teste)")) return;
             await fetch(`/api/restaurants/${restaurantId}/reset-test`, { method: "POST" });
@@ -1039,6 +1056,26 @@ export default function DashboardPage() {
           {sseConnected ? "🟢 Live updates active" : "🔴 Reconnecting... (polling la 15s)"}
         </p>
       </div>
+
+      {/* Deploy Toast */}
+      {showDeployToast && (
+        <div style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 9999,
+          background: "#16a34a", color: "#fff",
+          padding: "12px 20px", borderRadius: "12px",
+          boxShadow: "0 4px 20px rgba(22,163,74,0.4)",
+          fontSize: 14, fontWeight: 700,
+          display: "flex", alignItems: "center", gap: 10,
+          animation: "slideIn 0.3s ease"
+        }}>
+          <span>✅ Deploy v{APP_VERSION} live</span>
+          <button onClick={() => setShowDeployToast(false)} style={{
+            background: "rgba(255,255,255,0.2)", border: "none",
+            color: "#fff", borderRadius: "6px", padding: "2px 8px",
+            cursor: "pointer", fontSize: 12, fontWeight: 700
+          }}>✕</button>
+        </div>
+      )}
     </div>
   );
 }
