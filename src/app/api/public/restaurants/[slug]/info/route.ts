@@ -60,6 +60,8 @@ export async function GET(
       estimatedWaitMinutes: (queueLength + 1) * effectiveTableTimeMin,
       waitMinutesPerGroup,
       maxPartySize: restaurant.settings?.maxPartySize ?? 10,
+      maxQueueSize: restaurant.settings?.maxQueueSize ?? 50,
+      queueFull: queueLength >= (restaurant.settings?.maxQueueSize ?? 50),
     });
   } catch (err) {
     console.error("[info]", err);

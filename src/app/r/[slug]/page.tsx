@@ -121,6 +121,25 @@ export default function JoinPage() {
     </div>
   );
 
+  if (info.queueFull) return (
+    <div style={{ ...s.page, background: FOOD_BG }}>
+      <FoodDecorations />
+      <div style={s.card}>
+        <div style={s.headerEmoji}>⏳</div>
+        <h1 style={s.title}>{info.name}</h1>
+        <div style={{ ...s.banner, background: "#fee2e2", color: "#991b1b" }}>
+          Lista de așteptare este plină
+        </div>
+        <p style={{ fontSize: 15, color: "#374151", textAlign: "center", margin: "16px 0", lineHeight: 1.6 }}>
+          În acest moment sunt <strong>{info.queueLength} persoane</strong> în fața dumneavoastră.
+        </p>
+        <p style={s.muted}>
+          Vă rugăm să reveniți mai târziu. Când un loc se eliberează, lista se va redeschide automat.
+        </p>
+      </div>
+    </div>
+  );
+
   if (info.status === "OPEN") return (
     <div style={{ ...s.page, background: FOOD_BG }}>
       <FoodDecorations />
