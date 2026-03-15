@@ -70,6 +70,7 @@ export default function StatusPage() {
   const [error, setError] = useState("");
   const [canceling, setCanceling] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const confirmSecs = useCountdown(data?.status === "CALLED" ? data.confirmDeadlineAt : undefined);
   const arrivalSecs = useCountdown(data?.status === "CONFIRMED" ? data.arrivalDeadlineAt : undefined);
@@ -97,6 +98,7 @@ export default function StatusPage() {
   }
 
   async function handleCancel() {
+    setShowCancelModal(false);
     setCanceling(true);
     try {
       const res = await fetch(`/api/public/entry/${publicToken}/cancel`, { method: "POST" });
@@ -199,13 +201,44 @@ export default function StatusPage() {
         )}
 
         {isActive && (
-          <button onClick={handleCancel} disabled={canceling} style={s.cancelBtn}>
+          <button onClick={() => setShowCancelModal(true)} disabled={canceling} style={s.cancelBtn}>
             {canceling ? "Se anulează..." : "Anulează rezervarea"}
           </button>
         )}
 
         {isActive && <p style={s.refresh}>Auto-refresh la 15 sec</p>}
+
+        <div style={{ textAlign: "center", padding: "16px", fontSize: 12, color: "#9ca3af", borderTop: "1px solid #f3f4f6", marginTop: 24 }}>
+          LineHop™ 2026
+        </div>
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowCancelModal(false)}>
+          <div style={{ background: "#fff", borderRadius: 20, padding: 32, maxWidth: 380, width: "90%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", textAlign: "center" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1a1a", marginBottom: 12 }}>Anulezi rezervarea?</div>
+            <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 24, lineHeight: 1.5 }}>
+              Ești sigur că vrei să anulezi? Nu vei mai putea fi adăugat în această coadă astăzi.
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+              <button
+                onClick={() => setShowCancelModal(false)}
+                style={{ padding: "10px 24px", background: "transparent", color: "#6b7280", border: "1.5px solid #e5e7eb", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 600 }}
+              >
+                Nu, rămân
+              </button>
+              <button
+                onClick={handleCancel}
+                style={{ padding: "10px 24px", background: "#dc2626", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
+              >
+                Da, anulează
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -256,7 +256,7 @@ export default function HomePage() {
 
       {/* SECTION 8 — FOOTER */}
       <footer style={{ borderTop: "1px solid #f3f4f6", padding: "1.5rem", textAlign: "center", color: "#9ca3af", fontSize: "0.875rem" }}>
-        © 2026 LineHop · contact@linehop.ro
+        LineHop™ 2026 · contact@linehop.ro
       </footer>
     </div>
   );

@@ -201,13 +201,14 @@ export default function DashboardPage() {
   const [loadingErrorLog, setLoadingErrorLog] = useState(false);
   const [showDeployToast, setShowDeployToast] = useState(false);
   const [seatConfirmEntry, setSeatConfirmEntry] = useState<Entry | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const [undoState, setUndoState] = useState<Entry | null>(null);
   const sseRef = useRef<EventSource | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchQueue = useCallback(async () => {
     try {
-      const res = await fetch(`/api/restaurants/${restaurantId}/queue`);
+      const res = await fetch(`/api/restaurants/${restaurantId}/queue`, { credentials: "include" });
       const data = await res.json();
       if (data.ok) setEntries(data.entries);
     } finally {
@@ -228,7 +229,7 @@ export default function DashboardPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch(`/api/restaurants/${restaurantId}/stats`);
+      const res = await fetch(`/api/restaurants/${restaurantId}/stats`, { credentials: "include" });
       if (res.ok) {
         const d = await res.json();
         setStats(d);
@@ -282,6 +283,11 @@ export default function DashboardPage() {
     refreshAll();
   }, [refreshAll]);
 
+  // Detect mobile
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 640);
+  }, []);
+
   // Cleanup undo timer on unmount
   useEffect(() => {
     return () => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); };
@@ -296,6 +302,7 @@ export default function DashboardPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
+        credentials: "include",
       });
       if (res.ok) {
         setRestStatus(newStatus);
@@ -317,7 +324,7 @@ export default function DashboardPage() {
   async function handleToggleList() {
     setTogglingList(true);
     try {
-      const res = await fetch(`/api/restaurants/${restaurantId}/toggle-list`, { method: "POST" });
+      const res = await fetch(`/api/restaurants/${restaurantId}/toggle-list`, { method: "POST", credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         setListClosed(data.listClosed);
@@ -336,7 +343,7 @@ export default function DashboardPage() {
     setCallingNext(true);
     setMessage(null);
     try {
-      const res = await fetch(`/api/restaurants/${restaurantId}/call-next`, { method: "POST" });
+      const res = await fetch(`/api/restaurants/${restaurantId}/call-next`, { method: "POST", credentials: "include" });
       const data = await res.json();
       if (data.ok && data.entry) {
         setMessage({ text: `✅ Chemat: ${data.entry.guestName ?? data.entry.phoneE164} (${data.entry.partySize} pers.)`, type: "ok" });
@@ -351,7 +358,7 @@ export default function DashboardPage() {
 
   async function handleAction(entryId: string, action: string) {
     const prevEntry = entries.find(e => e.id === entryId);
-    const res = await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/${action}`, { method: "POST" });
+    const res = await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/${action}`, { method: "POST", credentials: "include" });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       setMessage({ text: `❌ ${d.error ?? "Eroare"}`, type: "info" });
@@ -372,6 +379,7 @@ export default function DashboardPage() {
     await fetch(`/api/restaurants/${restaurantId}/entries/${entryToRestore.id}/undo`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         previousStatus: entryToRestore.status,
         previousData: {
@@ -401,7 +409,7 @@ export default function DashboardPage() {
   }
 
   async function handleUndo(entryId: string, action: "undo-seated" | "undo-skipped" | "re-call") {
-    const res = await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/${action}`, { method: "POST" });
+    const res = await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/${action}`, { method: "POST", credentials: "include" });
     const data = await res.json();
     if (res.ok) {
       const labels = { "undo-seated": "↩️ Undo seated", "undo-skipped": "↩️ Undo skipped", "re-call": "📲 Re-call trimis" };
@@ -421,6 +429,7 @@ export default function DashboardPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(supportForm),
+        credentials: "include",
       });
       if (res.ok) {
         setShowSupport(false);
@@ -440,7 +449,7 @@ export default function DashboardPage() {
     setShowErrorLog(true);
     setLoadingErrorLog(true);
     try {
-      const res = await fetch(`/api/restaurants/${restaurantId}/error-log`);
+      const res = await fetch(`/api/restaurants/${restaurantId}/error-log`, { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         setErrorLogs(data.logs ?? []);
@@ -462,6 +471,7 @@ export default function DashboardPage() {
       const res = await fetch(`/api/restaurants/${restaurantId}/entries/add-manual`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           guestName: manualForm.guestName,
           partySize: manualForm.partySize,
@@ -486,6 +496,7 @@ export default function DashboardPage() {
     await fetch(`/api/restaurants/${restaurantId}/entries/walk-in`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ partySize, notes: walkInNotes || undefined }),
     });
     setWalkInNotes("");
@@ -535,6 +546,7 @@ export default function DashboardPage() {
       const res = await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/edit`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(editForm),
       });
       if (res.ok) {
@@ -615,7 +627,7 @@ export default function DashboardPage() {
               return (
                 <button
                   key={st}
-                  onClick={() => handleSetStatus(st)}
+                  onPointerUp={() => handleSetStatus(st)}
                   disabled={changingStatus || restStatus === null}
                   style={{
                     ...s.statusBtn,
@@ -718,7 +730,7 @@ export default function DashboardPage() {
           </button>
           <button onClick={async () => {
             if (!confirm("Ștergi toată coada? (doar pentru teste)")) return;
-            await fetch(`/api/restaurants/${restaurantId}/reset-test`, { method: "POST" });
+            await fetch(`/api/restaurants/${restaurantId}/reset-test`, { method: "POST", credentials: "include" });
             fetchQueue();
           }} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#fff1f2", color: "#be123c", border: "2px solid #fda4af" }}>
             🗑️ Reset Test
@@ -864,8 +876,11 @@ export default function DashboardPage() {
             display: "flex", alignItems: "center", justifyContent: "center"
           }} onClick={() => setShowErrorLog(false)}>
             <div style={{
-              background: "#fff", borderRadius: 20, padding: 32,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.3)", maxWidth: 700, width: "95%", maxHeight: "80vh", overflowY: "auto" as const
+              background: "#fff", padding: 32,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)", overflowY: "auto" as const,
+              ...(isMobile
+                ? { position: "fixed" as const, top: 0, left: 0, right: 0, bottom: 0, borderRadius: 0 }
+                : { borderRadius: 20, maxWidth: 700, width: "95%", maxHeight: "80vh" }),
             }} onClick={e => e.stopPropagation()}>
               <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: "#1a1a1a" }}>📋 Error Log</div>
               {loadingErrorLog ? (
@@ -935,7 +950,7 @@ export default function DashboardPage() {
                   onClick={() => { const e = seatConfirmEntry; setSeatConfirmEntry(null); handleAction(e.id, "seat"); }}
                   style={{ padding: "10px 24px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
                 >
-                  Confirmă seated
+                  Confirmă Așezat
                 </button>
               </div>
             </div>
@@ -1051,6 +1066,10 @@ export default function DashboardPage() {
         <p style={s.refresh}>
           {sseConnected ? "🟢 Live updates active" : "🔴 Reconnecting... (polling la 15s)"}
         </p>
+
+        <div style={{ textAlign: "center", padding: "16px", fontSize: 12, color: "#9ca3af", borderTop: "1px solid #f3f4f6", marginTop: 24 }}>
+          LineHop™ 2026
+        </div>
       </div>
 
       {/* Deploy Toast */}
@@ -1135,19 +1154,19 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
       <div style={{ minWidth: 130, textAlign: "center" as const }}>
         {entry.status === "NO_SHOW_CONFIRM" && (
           <>
-            <span style={{ ...s.badge, background: "#fee2e2", color: "#991b1b" }}>⌛ Confirmation Timeout</span>
+            <span style={{ ...s.badge, background: "#fee2e2", color: "#991b1b" }}>⌛ Neprezentare (confirmare)</span>
             {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
           </>
         )}
         {entry.status === "NO_SHOW_ARRIVAL" && (
           <>
-            <span style={{ ...s.badge, background: "#ffedd5", color: "#9a3412" }}>⌛ Time to Seat Expired</span>
+            <span style={{ ...s.badge, background: "#ffedd5", color: "#9a3412" }}>⌛ Neprezentare (sosire)</span>
             {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
           </>
         )}
         {entry.status === "CALLED" && !locallyExpired && (
           <>
-            <span style={{ ...s.badge, background: "#fed7aa", color: "#9a3412" }}>📲 CALLED</span>
+            <span style={{ ...s.badge, background: "#fed7aa", color: "#9a3412" }}>📲 Chemat</span>
             {entry.confirmDeadlineAt && (
               <div style={{ marginTop: 4 }}>
                 <CountdownTimer deadline={entry.confirmDeadlineAt} totalSec={120} />
@@ -1167,7 +1186,7 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
         )}
         {entry.status === "CONFIRMED" && !locallyExpired && (
           <>
-            <span style={{ ...s.badge, background: "#bbf7d0", color: "#166534" }}>✅ CONFIRMED</span>
+            <span style={{ ...s.badge, background: "#bbf7d0", color: "#166534" }}>✅ Confirmat</span>
             {entry.arrivalDeadlineAt && (
               <div style={{ marginTop: 4 }}>
                 <CountdownTimer deadline={entry.arrivalDeadlineAt} totalSec={300} />
@@ -1187,7 +1206,7 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
         )}
         {entry.status === "WAITING" && (
           <>
-            <span style={{ ...s.badge }}>⏳ WAITING</span>
+            <span style={{ ...s.badge }}>⏳ În așteptare</span>
             {isLongWait && (
               <div style={{ marginTop: 4 }}>
                 <span style={{ ...s.badge, background: "#fed7aa", color: "#9a3412" }}>🕐 Asteptare lunga</span>
@@ -1196,10 +1215,10 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
           </>
         )}
         {entry.status === "SEATED" && (
-          <span style={{ ...s.badge, background: "#e0f2fe", color: "#0369a1" }}>🪑 SEATED</span>
+          <span style={{ ...s.badge, background: "#e0f2fe", color: "#0369a1" }}>🪑 Așezat</span>
         )}
         {entry.status === "SKIPPED" && (
-          <span style={{ ...s.badge, background: "#f3f4f6", color: "#6b7280" }}>⏭ SKIPPED</span>
+          <span style={{ ...s.badge, background: "#f3f4f6", color: "#6b7280" }}>⏭ Sărit</span>
         )}
         {!["NO_SHOW_CONFIRM","NO_SHOW_ARRIVAL","CALLED","CONFIRMED","WAITING","SEATED","SKIPPED"].includes(entry.status) && (
           <span style={s.badge}>{entry.status}</span>
@@ -1215,13 +1234,13 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
         )}
         {["WAITING", "CALLED", "CONFIRMED"].includes(entry.status) && (
           <>
-            <button onClick={() => onSeat(entry)} style={{ ...s.actionBtn, background: "#2563eb" }}>Seat</button>
-            <button onClick={() => onAction(entry.id, "skip")} style={{ ...s.actionBtn, background: "#9ca3af" }}>Skip</button>
+            <button onClick={() => onSeat(entry)} style={{ ...s.actionBtn, background: "#2563eb" }}>Așează</button>
+            <button onClick={() => onAction(entry.id, "skip")} style={{ ...s.actionBtn, background: "#9ca3af" }}>Sari peste</button>
           </>
         )}
         {["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(entry.status) && (entry.callAgainCount ?? 0) < 1 && (
           <button onClick={() => onAction(entry.id, "call-again")} style={{ ...s.actionBtn, background: "#7c3aed" }}>
-            🔄 Call Again
+            🔄 Cheamă din nou
           </button>
         )}
         {/* Undo buttons for SEATED */}
@@ -1243,7 +1262,7 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
         )}
         {["WAITING", "CALLED", "CONFIRMED", "NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(entry.status) && (
           <button onClick={() => onStartEdit(entry)} style={{ ...s.actionBtn, background: "#6b7280" }}>
-            ✏️ Edit
+            ✏️ Editează
           </button>
         )}
       </div>

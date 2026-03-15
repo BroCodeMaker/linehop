@@ -205,6 +205,9 @@ export default function JoinPage() {
         </form>
 
         <p style={s.muted}>Vei primi mesaj WhatsApp când masa ta este gata.</p>
+        <div style={{ textAlign: "center", padding: "16px", fontSize: 12, color: "#9ca3af", borderTop: "1px solid #f3f4f6", marginTop: 24 }}>
+          LineHop™ 2026
+        </div>
       </div>
     </div>
   );

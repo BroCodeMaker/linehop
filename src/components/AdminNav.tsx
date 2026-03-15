@@ -33,7 +33,7 @@ export default function AdminNav({ restaurantId, onSupport, onErrorLog }: AdminN
         >
           ← Restaurante
         </button>
-        <span style={s.logo}>🍽️ WaitList</span>
+        <span style={s.logo}>LineHop</span>
       </div>
 
       {/* Tabs */}
@@ -141,6 +141,8 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: 10,
     padding: "4px",
     flexShrink: 0,
+    overflowX: "auto",
+    WebkitOverflowScrolling: "touch",
   },
   tab: {
     padding: "6px 18px",
