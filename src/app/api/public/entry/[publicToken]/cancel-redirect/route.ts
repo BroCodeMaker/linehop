@@ -14,7 +14,7 @@ export async function GET(
     })
 
     if (!entry) {
-      return NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_APP_URL || 'https://waitlist-app-plum.vercel.app'))
+      return NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_APP_URL || 'https://linehop.app'))
     }
 
     if (['WAITING', 'CALLED', 'CONFIRMED'].includes(entry.status)) {
@@ -26,10 +26,10 @@ export async function GET(
     }
 
     const slug = entry.restaurant.slug
-    const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://waitlist-app-plum.vercel.app'}/r/${slug}?canceled=1`
+    const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://linehop.app'}/r/${slug}?canceled=1`
     return NextResponse.redirect(redirectUrl)
   } catch (err) {
     console.error('[cancel-redirect]', err)
-    return NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_APP_URL || 'https://waitlist-app-plum.vercel.app'))
+    return NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_APP_URL || 'https://linehop.app'))
   }
 }

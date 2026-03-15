@@ -574,10 +574,10 @@ export default function DashboardPage() {
   });
   const expiredEntries = entries.filter(e => {
     if (!["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status) && !isLocallyExpiredFn(e)) return false;
-    // Auto-hide NO_SHOW entries after 15 minutes (client-side filter, no DB delete)
+    // Auto-hide NO_SHOW entries after 10 minutes (client-side filter, no DB delete)
     if (["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status) && e.expiredAt) {
       const minutesSince = (Date.now() - new Date(e.expiredAt).getTime()) / 60000;
-      if (minutesSince > 15) return false;
+      if (minutesSince > 10) return false;
     }
     return true;
   });
@@ -1316,7 +1316,7 @@ const s: Record<string, React.CSSProperties> = {
   submitBtn: { padding: "8px 18px", background: "#16a34a", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" },
   cancelBtn: { padding: "8px 14px", background: "transparent", color: "#9ca3af", border: "1.5px solid #e5e7eb", borderRadius: "8px", cursor: "pointer", fontSize: "14px" },
   emptyState: { textAlign: "center" as const, padding: "48px 0", color: "#9ca3af", fontSize: "16px" },
-  tableWrap: { background: "rgba(255,255,255,0.95)", borderRadius: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflow: "hidden" },
+  tableWrap: { background: "rgba(255,255,255,0.95)", borderRadius: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflowX: "auto" },
   badge: { fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "4px", background: "rgba(0,0,0,0.06)" },
   actionBtn: { padding: "5px 12px", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "#fff" },
   muted: { color: "#9ca3af", padding: "32px 0", textAlign: "center" as const },

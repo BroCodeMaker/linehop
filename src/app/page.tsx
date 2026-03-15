@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
 
 export default function HomePage() {
   return (
@@ -7,12 +8,15 @@ export default function HomePage() {
       <nav style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "rgba(255,255,255,0.95)", borderBottom: "1px solid #f3f4f6", backdropFilter: "blur(4px)" }}>
         <div style={{ maxWidth: "72rem", margin: "0 auto", padding: "1rem 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontSize: "1.5rem", fontWeight: 900, color: "#f97316", letterSpacing: "-0.025em" }}>LineHop</span>
-          <Link
-            href="/app/login"
-            style={{ backgroundColor: "#111827", color: "#ffffff", fontWeight: 700, fontSize: "0.875rem", padding: "0.625rem 1.25rem", borderRadius: "0.75rem", textDecoration: "none", display: "inline-block" }}
-          >
-            Login
-          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <LocaleSwitcher />
+            <Link
+              href="/app/login"
+              style={{ backgroundColor: "#111827", color: "#ffffff", fontWeight: 700, fontSize: "0.875rem", padding: "0.625rem 1.25rem", borderRadius: "0.75rem", textDecoration: "none", display: "inline-block" }}
+            >
+              Login
+            </Link>
+          </div>
         </div>
       </nav>
 

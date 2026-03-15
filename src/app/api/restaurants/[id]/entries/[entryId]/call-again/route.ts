@@ -6,7 +6,7 @@ import { emitUpdate } from '@/lib/emitter'
 import { scheduleReminder } from '@/lib/timers'
 import { verifySession } from "@/lib/session";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://waitlist-app-plum.vercel.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://linehop.app'
 
 function isAuthed(req: NextRequest): boolean {
   const token = req.cookies.get("session")?.value;

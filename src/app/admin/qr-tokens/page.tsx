@@ -12,6 +12,7 @@ type QrToken = {
   restaurant: { id: string; name: string; slug: string } | null;
   createdAt: string;
   claimedAt: string | null;
+  firstScannedAt: string | null;
   notes: string | null;
 };
 
@@ -19,6 +20,14 @@ type Restaurant = {
   id: string;
   name: string;
   slug: string;
+};
+
+type TokenDetails = QrToken & {
+  entriesData: {
+    todayCount: number;
+    activeEntries: { id: string; guestName: string | null; partySize: number; status: string; createdAt: string }[];
+  } | null;
+  errorLogs: { id: string; subject: string; description: string; status: string; createdAt: string }[];
 };
 
 export default function QrTokensPage() {
@@ -30,6 +39,8 @@ export default function QrTokensPage() {
   const [generating, setGenerating] = useState(false);
   const [mappingId, setMappingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [detailsToken, setDetailsToken] = useState<TokenDetails | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   async function loadAll() {
     const [tokensRes, restsRes] = await Promise.all([
@@ -79,6 +90,27 @@ export default function QrTokensPage() {
     a.href = dataUrl;
     a.download = `QR-${token}.png`;
     a.click();
+  }
+
+  async function handleDelete(t: QrToken) {
+    if (!confirm(`Ștergi token-ul ${t.token}? Această acțiune nu poate fi anulată.`)) return;
+    const res = await fetch(`/api/admin/qr-tokens/${t.id}`, { method: "DELETE" });
+    if (res.ok) {
+      await loadAll();
+    } else {
+      const d = await res.json().catch(() => ({}));
+      setError(d.error ?? "Eroare la ștergere");
+    }
+  }
+
+  async function handleDetails(t: QrToken) {
+    setDetailsLoading(true);
+    setDetailsToken(null);
+    const res = await fetch(`/api/admin/qr-tokens/${t.id}`);
+    if (res.ok) {
+      setDetailsToken(await res.json());
+    }
+    setDetailsLoading(false);
   }
 
   function handlePrint(selected: string[]) {
@@ -345,21 +377,53 @@ export default function QrTokensPage() {
                         {new Date(t.createdAt).toLocaleDateString("ro-RO")}
                       </td>
                       <td style={{ padding: "10px 12px" }}>
-                        <button
-                          onClick={() => handleDownloadQr(t.token)}
-                          style={{
-                            background: "#f3f4f6",
-                            color: "#111",
-                            border: "none",
-                            borderRadius: 6,
-                            padding: "6px 12px",
-                            fontSize: 12,
-                            cursor: "pointer",
-                            fontWeight: 600,
-                          }}
-                        >
-                          ↓ QR
-                        </button>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          <button
+                            onClick={() => handleDownloadQr(t.token)}
+                            style={{
+                              background: "#f3f4f6",
+                              color: "#111",
+                              border: "none",
+                              borderRadius: 6,
+                              padding: "6px 12px",
+                              fontSize: 12,
+                              cursor: "pointer",
+                              fontWeight: 600,
+                            }}
+                          >
+                            ↓ QR
+                          </button>
+                          <button
+                            onClick={() => handleDetails(t)}
+                            style={{
+                              background: "#eff6ff",
+                              color: "#1d4ed8",
+                              border: "none",
+                              borderRadius: 6,
+                              padding: "6px 12px",
+                              fontSize: 12,
+                              cursor: "pointer",
+                              fontWeight: 600,
+                            }}
+                          >
+                            🔍 Detalii
+                          </button>
+                          <button
+                            onClick={() => handleDelete(t)}
+                            style={{
+                              background: "#fee2e2",
+                              color: "#b91c1c",
+                              border: "none",
+                              borderRadius: 6,
+                              padding: "6px 12px",
+                              fontSize: 12,
+                              cursor: "pointer",
+                              fontWeight: 600,
+                            }}
+                          >
+                            🗑️ Șterge
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -369,6 +433,119 @@ export default function QrTokensPage() {
           )}
         </div>
       </div>
+
+      {/* Details Modal */}
+      {(detailsLoading || detailsToken) && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+          onClick={() => { setDetailsToken(null); }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 16,
+              padding: 28,
+              maxWidth: 560,
+              width: "100%",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {detailsLoading ? (
+              <div style={{ textAlign: "center", color: "#6b7280", padding: "32px 0" }}>Se încarcă...</div>
+            ) : detailsToken ? (
+              <>
+                <h2 style={{ margin: "0 0 16px", fontSize: 18, fontWeight: 800 }}>
+                  Detalii Token: <span style={{ fontFamily: "monospace", letterSpacing: 2 }}>{detailsToken.token}</span>
+                </h2>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20, fontSize: 13 }}>
+                  <div><strong>ID:</strong> <span style={{ fontFamily: "monospace", color: "#6b7280" }}>{detailsToken.id}</span></div>
+                  <div><strong>Status:</strong> <span style={{
+                    background: detailsToken.status === "claimed" ? "#dcfce7" : "#f3f4f6",
+                    color: detailsToken.status === "claimed" ? "#16a34a" : "#6b7280",
+                    borderRadius: 12, padding: "1px 8px", fontSize: 11, fontWeight: 700,
+                  }}>{detailsToken.status}</span></div>
+                  <div><strong>Creat la:</strong> {new Date(detailsToken.createdAt).toLocaleString("ro-RO")}</div>
+                  {detailsToken.claimedAt && <div><strong>Clamat la:</strong> {new Date(detailsToken.claimedAt).toLocaleString("ro-RO")}</div>}
+                  {detailsToken.firstScannedAt && <div><strong>Prima scanare:</strong> {new Date(detailsToken.firstScannedAt).toLocaleString("ro-RO")}</div>}
+                </div>
+
+                {detailsToken.restaurant && (
+                  <div style={{ marginBottom: 20 }}>
+                    <h3 style={{ margin: "0 0 10px", fontSize: 14, fontWeight: 700, color: "#374151" }}>Restaurant asociat</h3>
+                    <div style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 14px", fontSize: 13 }}>
+                      <div><strong>{detailsToken.restaurant.name}</strong> <span style={{ color: "#9ca3af" }}>/{detailsToken.restaurant.slug}</span></div>
+                    </div>
+                  </div>
+                )}
+
+                {detailsToken.entriesData && (
+                  <div style={{ marginBottom: 20 }}>
+                    <h3 style={{ margin: "0 0 10px", fontSize: 14, fontWeight: 700, color: "#374151" }}>
+                      Entries azi: <span style={{ color: "#2563eb" }}>{detailsToken.entriesData.todayCount}</span>
+                    </h3>
+                    {detailsToken.entriesData.activeEntries.length > 0 ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        {detailsToken.entriesData.activeEntries.map((e) => (
+                          <div key={e.id} style={{ background: "#f9fafb", borderRadius: 8, padding: "8px 12px", fontSize: 12, display: "flex", justifyContent: "space-between" }}>
+                            <span>{e.guestName ?? "—"} ({e.partySize} pers.)</span>
+                            <span style={{ color: "#6b7280" }}>{e.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ color: "#9ca3af", fontSize: 13 }}>Nicio intrare activă.</div>
+                    )}
+                  </div>
+                )}
+
+                {detailsToken.errorLogs.length > 0 && (
+                  <div style={{ marginBottom: 20 }}>
+                    <h3 style={{ margin: "0 0 10px", fontSize: 14, fontWeight: 700, color: "#374151" }}>Ultimele 5 erori</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {detailsToken.errorLogs.map((err) => (
+                        <div key={err.id} style={{ background: "#fff7ed", borderRadius: 8, padding: "8px 12px", fontSize: 12 }}>
+                          <div style={{ fontWeight: 700, color: "#92400e" }}>{err.subject}</div>
+                          <div style={{ color: "#6b7280", marginTop: 2 }}>{err.description}</div>
+                          <div style={{ color: "#d1d5db", fontSize: 11, marginTop: 2 }}>{new Date(err.createdAt).toLocaleString("ro-RO")}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setDetailsToken(null)}
+                  style={{
+                    padding: "9px 20px",
+                    background: "#111827",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Închide
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

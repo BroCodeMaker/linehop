@@ -1,7 +1,7 @@
 import prisma from './prisma'
 import { scheduleReminder, clearReminderTimer } from './timers'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://waitlist-app-plum.vercel.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://linehop.app'
 
 // ─── Settings helper ──────────────────────────────────────────────────────────
 // Fetches restaurant settings with safe defaults so every timer uses DB values,

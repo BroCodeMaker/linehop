@@ -21,7 +21,7 @@ export default function AdminNav({ restaurantId, onSupport, onErrorLog }: AdminN
   const isStatistics = pathname?.includes("/statistics");
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     router.push("/app/login");
   }
 
