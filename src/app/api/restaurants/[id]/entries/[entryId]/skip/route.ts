@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { skipEntry, callNext } from "@/lib/queue";
+import { skipEntry } from "@/lib/queue";
 import { emitUpdate } from "@/lib/emitter";
 import { verifySession } from "@/lib/session";
 
@@ -28,13 +28,9 @@ export async function POST(
       );
     }
 
-    console.log(`[skip] Entry ${entryId} skipped, calling next...`);
-
-    // Automatically call next after skip
-    await callNext(id);
     emitUpdate(id);
 
-    return NextResponse.json({ ok: true, message: "Entry skipped, next guest called" });
+    return NextResponse.json({ ok: true, message: "Entry skipped" });
   } catch (err) {
     console.error("[skip]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

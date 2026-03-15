@@ -21,7 +21,17 @@ type Entry = {
   confirmDeadlineAt?: string;
   arrivalDeadlineAt?: string;
   expiredAt?: string;
+  expiredReason?: string;
   callAgainCount?: number;
+};
+
+type ErrorLogEntry = {
+  id: string;
+  subject: string;
+  description: string;
+  status: string;
+  createdAt: string;
+  restaurant?: { name: string };
 };
 
 type RestStatus = "OPEN" | "FULL" | "PAUSED" | "CLOSED";
@@ -126,6 +136,35 @@ function BufferTimer({ expiredAt }: { expiredAt: string }) {
   return <span style={{ fontSize: 11, color: "#9ca3af" }}>ascuns în {m}:{sc.toString().padStart(2, "0")}</span>;
 }
 
+// Shows how long an entry has been in expired state (since deadline passed)
+function ExpiredTimer({ since }: { since: string }) {
+  const [secs, setSecs] = useState(0);
+  useEffect(() => {
+    const start = new Date(since).getTime();
+    const update = () => setSecs(Math.max(0, Math.floor((Date.now() - start) / 1000)));
+    update();
+    const t = setInterval(update, 1000);
+    return () => clearInterval(t);
+  }, [since]);
+  const m = Math.floor(secs / 60), sc = secs % 60;
+  return (
+    <span style={{ fontSize: 11, color: "#ef4444", fontVariantNumeric: "tabular-nums" as const }}>
+      expirat de {m}:{sc.toString().padStart(2, "0")}
+    </span>
+  );
+}
+
+function isLocallyExpiredFn(entry: Entry): boolean {
+  const now = Date.now();
+  if (entry.status === "CALLED" && entry.confirmDeadlineAt) {
+    return new Date(entry.confirmDeadlineAt).getTime() < now;
+  }
+  if (entry.status === "CONFIRMED" && entry.arrivalDeadlineAt) {
+    return new Date(entry.arrivalDeadlineAt).getTime() < now;
+  }
+  return false;
+}
+
 // Suppress unused import warning
 void timeAgo;
 
@@ -154,6 +193,12 @@ export default function DashboardPage() {
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [restaurantSlug, setRestaurantSlug] = useState<string>("");
   const [togglingList, setTogglingList] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
+  const [supportForm, setSupportForm] = useState({ subject: "", description: "" });
+  const [supportSubmitting, setSupportSubmitting] = useState(false);
+  const [showErrorLog, setShowErrorLog] = useState(false);
+  const [errorLogs, setErrorLogs] = useState<ErrorLogEntry[]>([]);
+  const [loadingErrorLog, setLoadingErrorLog] = useState(false);
   const sseRef = useRef<EventSource | null>(null);
 
   const fetchQueue = useCallback(async () => {
@@ -308,6 +353,43 @@ export default function DashboardPage() {
     await refreshAll();
   }
 
+  async function handleSupportSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSupportSubmitting(true);
+    try {
+      const res = await fetch(`/api/restaurants/${restaurantId}/error-log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(supportForm),
+      });
+      if (res.ok) {
+        setShowSupport(false);
+        setSupportForm({ subject: "", description: "" });
+        setMessage({ text: "✅ Solicitare trimisă cu succes!", type: "ok" });
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setMessage({ text: `❌ ${d.error ?? "Eroare"}`, type: "info" });
+      }
+    } finally {
+      setSupportSubmitting(false);
+    }
+  }
+
+  async function openErrorLog() {
+    setShowErrorLog(true);
+    setLoadingErrorLog(true);
+    try {
+      const res = await fetch(`/api/restaurants/${restaurantId}/error-log`);
+      if (res.ok) {
+        const data = await res.json();
+        setErrorLogs(data.logs ?? []);
+      }
+    } finally {
+      setLoadingErrorLog(false);
+    }
+  }
+
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/app/login");
@@ -410,8 +492,15 @@ export default function DashboardPage() {
   const called = entries.filter(e => e.status === "CALLED").length;
   const confirmed = entries.filter(e => e.status === "CONFIRMED").length;
 
-  // Split entries into active queue and recent undo-able entries
-  const activeEntries = entries.filter(e => !["SEATED", "SKIPPED"].includes(e.status));
+  // Split entries into active queue, expired/no-show, and recent undo-able
+  const activeEntries = entries.filter(e => {
+    if (["SEATED", "SKIPPED", "NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status)) return false;
+    if (isLocallyExpiredFn(e)) return false;
+    return true;
+  });
+  const expiredEntries = entries.filter(e =>
+    ["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status) || isLocallyExpiredFn(e)
+  );
   const recentEntries = entries.filter(e => ["SEATED", "SKIPPED"].includes(e.status));
 
   const statusCfg: Record<string, { label: string; active: string; icon: string }> = {
@@ -557,6 +646,12 @@ export default function DashboardPage() {
           <button onClick={openQR} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#f0fdf4", color: "#166534", border: "2px solid #86efac" }}>
             📱 QR Code
           </button>
+          <button onClick={() => setShowSupport(true)} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#fef3c7", color: "#92400e", border: "2px solid #fcd34d" }}>
+            🆘 Support
+          </button>
+          <button onClick={openErrorLog} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#f0f9ff", color: "#0c4a6e", border: "2px solid #7dd3fc" }}>
+            📋 Error Log
+          </button>
           <button onClick={async () => {
             if (!confirm("Ștergi toată coada? (doar pentru teste)")) return;
             await fetch(`/api/restaurants/${restaurantId}/reset-test`, { method: "POST" });
@@ -654,10 +749,104 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Support Modal */}
+        {showSupport && (
+          <div style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100,
+            display: "flex", alignItems: "center", justifyContent: "center"
+          }} onClick={() => setShowSupport(false)}>
+            <div style={{
+              background: "#fff", borderRadius: 20, padding: 32,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)", maxWidth: 460, width: "90%"
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: "#1a1a1a" }}>🆘 Support</div>
+              <form onSubmit={handleSupportSubmit} style={{ display: "flex", flexDirection: "column" as const, gap: 12 }}>
+                <div style={s.formGroup}>
+                  <label style={s.formLabel}>Subiect *</label>
+                  <input
+                    value={supportForm.subject}
+                    onChange={e => setSupportForm(f => ({ ...f, subject: e.target.value }))}
+                    placeholder="ex: Timer nu funcționează corect"
+                    required
+                    style={s.formInput}
+                  />
+                </div>
+                <div style={s.formGroup}>
+                  <label style={s.formLabel}>Descriere *</label>
+                  <textarea
+                    value={supportForm.description}
+                    onChange={e => setSupportForm(f => ({ ...f, description: e.target.value }))}
+                    placeholder="Descrie problema în detaliu..."
+                    required
+                    rows={4}
+                    style={{ ...s.formInput, resize: "vertical" as const, fontFamily: "inherit" }}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                  <button type="button" onClick={() => setShowSupport(false)} style={s.cancelBtn}>Anulează</button>
+                  <button type="submit" disabled={supportSubmitting} style={s.submitBtn}>
+                    {supportSubmitting ? "Se trimite..." : "Trimite"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Error Log Modal */}
+        {showErrorLog && (
+          <div style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100,
+            display: "flex", alignItems: "center", justifyContent: "center"
+          }} onClick={() => setShowErrorLog(false)}>
+            <div style={{
+              background: "#fff", borderRadius: 20, padding: 32,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)", maxWidth: 700, width: "95%", maxHeight: "80vh", overflowY: "auto" as const
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: "#1a1a1a" }}>📋 Error Log</div>
+              {loadingErrorLog ? (
+                <p style={s.muted}>Se încarcă...</p>
+              ) : errorLogs.length === 0 ? (
+                <p style={{ color: "#9ca3af", textAlign: "center" as const, padding: "24px 0" }}>Nu există înregistrări.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
+                  {errorLogs.map(log => (
+                    <div key={log.id} style={{
+                      background: log.status === "open" ? "#fef3c7" : "#f9fafb",
+                      border: `1.5px solid ${log.status === "open" ? "#fcd34d" : "#e5e7eb"}`,
+                      borderRadius: 10, padding: "12px 16px"
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{log.subject}</div>
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
+                          background: log.status === "open" ? "#fcd34d" : "#e5e7eb",
+                          color: log.status === "open" ? "#92400e" : "#6b7280",
+                          whiteSpace: "nowrap" as const
+                        }}>
+                          {log.status}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 13, color: "#374151", marginTop: 4 }}>{log.description}</div>
+                      <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>
+                        {new Date(log.createdAt).toLocaleString("ro-RO")}
+                        {log.restaurant && <> · {log.restaurant.name}</>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ marginTop: 20, textAlign: "right" as const }}>
+                <button onClick={() => setShowErrorLog(false)} style={s.cancelBtn}>Închide</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Active Queue */}
         {loading ? (
           <p style={s.muted}>Se încarcă coada...</p>
-        ) : activeEntries.length === 0 && recentEntries.length === 0 ? (
+        ) : activeEntries.length === 0 && expiredEntries.length === 0 && recentEntries.length === 0 ? (
           <div style={s.emptyState}><div style={{ fontSize: 48 }}>🎉</div><p>Coada este goală</p></div>
         ) : (
           <>
@@ -679,6 +868,33 @@ export default function DashboardPage() {
                     onEditCancel={() => setEditingId(null)}
                   />
                 ))}
+              </div>
+            )}
+
+            {/* Expired / No-show Section */}
+            {expiredEntries.length > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#ef4444", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 8 }}>
+                  ⌛ Expirat / No-show ({expiredEntries.length})
+                </div>
+                <div style={s.tableWrap}>
+                  {expiredEntries.map((entry, i) => (
+                    <EntryRow
+                      key={entry.id}
+                      entry={entry}
+                      index={i}
+                      editingId={editingId}
+                      editForm={editForm}
+                      editSubmitting={editSubmitting}
+                      onAction={handleAction}
+                      onUndo={handleUndo}
+                      onStartEdit={startEdit}
+                      onEditChange={setEditForm}
+                      onEditSave={handleEditSave}
+                      onEditCancel={() => setEditingId(null)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
@@ -734,7 +950,11 @@ type EntryRowProps = {
 };
 
 function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction, onUndo, onStartEdit, onEditChange, onEditSave, onEditCancel }: EntryRowProps) {
-  const isLongWait = entry.status === "WAITING" && Date.now() - new Date(entry.createdAt).getTime() > 30 * 60 * 1000;
+  const now = Date.now();
+  const isLongWait = entry.status === "WAITING" && now - new Date(entry.createdAt).getTime() > 30 * 60 * 1000;
+  const locallyExpired =
+    (entry.status === "CALLED" && entry.confirmDeadlineAt && new Date(entry.confirmDeadlineAt).getTime() < now) ||
+    (entry.status === "CONFIRMED" && entry.arrivalDeadlineAt && new Date(entry.arrivalDeadlineAt).getTime() < now);
   return (
     <div
       style={{
@@ -783,7 +1003,7 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
             {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
           </>
         )}
-        {entry.status === "CALLED" && (
+        {entry.status === "CALLED" && !locallyExpired && (
           <>
             <span style={{ ...s.badge, background: "#fed7aa", color: "#9a3412" }}>📲 CALLED</span>
             {entry.confirmDeadlineAt && (
@@ -793,12 +1013,32 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
             )}
           </>
         )}
-        {entry.status === "CONFIRMED" && (
+        {entry.status === "CALLED" && locallyExpired && (
+          <>
+            <span style={{ ...s.badge, background: "#fee2e2", color: "#991b1b" }}>⏰ Expirat - confirmare</span>
+            {entry.confirmDeadlineAt && (
+              <div style={{ marginTop: 3 }}>
+                <ExpiredTimer since={entry.confirmDeadlineAt} />
+              </div>
+            )}
+          </>
+        )}
+        {entry.status === "CONFIRMED" && !locallyExpired && (
           <>
             <span style={{ ...s.badge, background: "#bbf7d0", color: "#166534" }}>✅ CONFIRMED</span>
             {entry.arrivalDeadlineAt && (
               <div style={{ marginTop: 4 }}>
                 <CountdownTimer deadline={entry.arrivalDeadlineAt} totalSec={300} />
+              </div>
+            )}
+          </>
+        )}
+        {entry.status === "CONFIRMED" && locallyExpired && (
+          <>
+            <span style={{ ...s.badge, background: "#ffedd5", color: "#9a3412" }}>⏰ Expirat - prezentare</span>
+            {entry.arrivalDeadlineAt && (
+              <div style={{ marginTop: 3 }}>
+                <ExpiredTimer since={entry.arrivalDeadlineAt} />
               </div>
             )}
           </>

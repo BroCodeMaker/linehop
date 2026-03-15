@@ -38,6 +38,26 @@ export async function GET(
       avgWaitMinutes = Math.round(totalMs / seatedTonight / 60000)
     }
 
+    // Cap: if calculated avg > 30 min, revert to manual setting and log the event
+    const AVG_CAP_MIN = 30
+    if (avgWaitMinutes !== null && avgWaitMinutes > AVG_CAP_MIN) {
+      const settings = await prisma.restaurantSettings.findUnique({
+        where: { restaurantId: id },
+        select: { waitMinutesPerGroup: true },
+      })
+      const manualValue = settings?.waitMinutesPerGroup ?? 10
+      await prisma.errorLog.create({
+        data: {
+          restaurantId: id,
+          subject: 'Avg wait time reverted',
+          description: `Calculated avg ${avgWaitMinutes}m exceeded ${AVG_CAP_MIN}min cap. Reverted to manual value: ${manualValue}m.`,
+          status: 'auto',
+        },
+      }).catch(() => {})
+      console.warn(`[stats] avg ${avgWaitMinutes}m > ${AVG_CAP_MIN}min cap, reverted to ${manualValue}m for restaurant ${id}`)
+      avgWaitMinutes = manualValue
+    }
+
     // 3. Confirm rate: entries that were called today vs those that confirmed/seated
     const calledToday = await prisma.waitlistEntry.count({
       where: {

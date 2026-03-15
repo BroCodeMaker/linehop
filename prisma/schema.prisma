@@ -18,6 +18,7 @@ model Restaurant {
   settings   RestaurantSettings?
   users      RestaurantUser[]
   entries    WaitlistEntry[]
+  errorLogs  ErrorLog[]
 }
 
 model RestaurantSettings {
@@ -74,6 +75,18 @@ model WaitlistEntry {
   notes             String?
   messageEvents     MessageEvent[]
   restaurant        Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, status, createdAt])
+}
+
+model ErrorLog {
+  id           String     @id @default(uuid())
+  restaurantId String
+  subject      String
+  description  String
+  status       String     @default("open")
+  createdAt    DateTime   @default(now())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@index([restaurantId, status, createdAt])
 }
