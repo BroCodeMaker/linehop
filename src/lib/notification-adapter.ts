@@ -50,8 +50,13 @@ class WhatsAppRealAdapter implements NotificationAdapter {
       return { ok: false, provider: "whatsapp-real", to, error: "Missing credentials" };
     }
 
+    // Normalize phone: strip leading + and any accidental double-prefix
+    const normalizedTo = to.replace(/^\+/, "").replace(/^40{2}/, "40");
+
     try {
-      console.log("[WhatsApp] Sending to:", to, "| URL:", this.apiUrl, "| Token prefix:", this.apiToken.slice(0,20));
+      console.log("[WhatsApp] Sending to:", normalizedTo, "| Token prefix:", this.apiToken.slice(0, 20));
+
+      // Try sending as free text first (works when conversation window is open)
       const response = await fetch(this.apiUrl, {
         method: "POST",
         headers: {
@@ -61,22 +66,46 @@ class WhatsAppRealAdapter implements NotificationAdapter {
         body: JSON.stringify({
           messaging_product: "whatsapp",
           recipient_type: "individual",
-          to,
+          to: normalizedTo,
           type: "text",
           text: { body },
         }),
       });
 
-      const data = (await response.json()) as { messages?: Array<{ id: string }> };
+      const data = (await response.json()) as { messages?: Array<{ id: string }>; error?: { code: number } };
+
       if (response.ok && data.messages?.[0]) {
-        return { ok: true, provider: "whatsapp-real", to, externalId: data.messages[0].id };
+        return { ok: true, provider: "whatsapp-real", to: normalizedTo, externalId: data.messages[0].id };
       }
 
-      const errText = await response.text().catch(() => "");
-      console.log("[WhatsApp] API error:", response.status, errText);
-      return { ok: false, provider: "whatsapp-real", to, error: `API error: ${response.status}` };
+      // If failed (e.g. outside 24h window), fall back to hello_world template
+      console.log("[WhatsApp] Free text failed (code:", data.error?.code, "), trying template fallback...");
+      const templateResponse = await fetch(this.apiUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: normalizedTo,
+          type: "template",
+          template: {
+            name: "hello_world",
+            language: { code: "en_US" },
+          },
+        }),
+      });
+
+      const templateData = (await templateResponse.json()) as { messages?: Array<{ id: string }> };
+      if (templateResponse.ok && templateData.messages?.[0]) {
+        console.log("[WhatsApp] Template fallback succeeded");
+        return { ok: true, provider: "whatsapp-real", to: normalizedTo, externalId: templateData.messages[0].id };
+      }
+
+      return { ok: false, provider: "whatsapp-real", to: normalizedTo, error: `API error: ${response.status}` };
     } catch (err) {
-      return { ok: false, provider: "whatsapp-real", to, error: String(err) };
+      return { ok: false, provider: "whatsapp-real", to: normalizedTo, error: String(err) };
     }
   }
 
