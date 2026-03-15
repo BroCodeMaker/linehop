@@ -161,7 +161,7 @@ export default function JoinPage() {
         <form onSubmit={handleSubmit} style={s.form}>
           <label style={s.label}>Număr de persoane</label>
           <select value={partySize} onChange={(e) => setPartySize(Number(e.target.value))} style={s.input} required>
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+            {Array.from({ length: info.maxPartySize ?? 10 }, (_, i) => i + 1).map((n) => (
               <option key={n} value={n}>{n} {n === 1 ? "persoană" : "persoane"}</option>
             ))}
           </select>

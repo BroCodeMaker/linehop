@@ -15,7 +15,7 @@ export async function GET(
         slug: true,
         status: true,
         listClosed: true,
-        settings: { select: { waitMinutesPerGroup: true, estimatedTableTimeMin: true, useCalculatedAvgTime: true } },
+        settings: { select: { waitMinutesPerGroup: true, estimatedTableTimeMin: true, useCalculatedAvgTime: true, maxPartySize: true } },
       },
     });
 
@@ -59,6 +59,7 @@ export async function GET(
       queueLength,
       estimatedWaitMinutes: (queueLength + 1) * effectiveTableTimeMin,
       waitMinutesPerGroup,
+      maxPartySize: restaurant.settings?.maxPartySize ?? 10,
     });
   } catch (err) {
     console.error("[info]", err);
