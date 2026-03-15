@@ -19,6 +19,19 @@ model Restaurant {
   users      RestaurantUser[]
   entries    WaitlistEntry[]
   errorLogs  ErrorLog[]
+  qrTokens   QrToken[]
+}
+
+model QrToken {
+  id             String      @id @default(cuid())
+  token          String      @unique
+  status         String      @default("unclaimed")
+  restaurantId   String?
+  restaurant     Restaurant? @relation(fields: [restaurantId], references: [id])
+  createdAt      DateTime    @default(now())
+  claimedAt      DateTime?
+  firstScannedAt DateTime?
+  notes          String?
 }
 
 model RestaurantSettings {
