@@ -3,7 +3,7 @@ import LocaleSwitcher from "@/components/LocaleSwitcher";
 
 export default function HomePage() {
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#ffffff", fontFamily: "sans-serif", color: "#111827" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#ffffff", fontFamily: "sans-serif", color: "#111827" }}>
       {/* Navbar */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, backgroundColor: "rgba(255,255,255,0.95)", borderBottom: "1px solid #f3f4f6", backdropFilter: "blur(4px)" }}>
         <div style={{ maxWidth: "72rem", margin: "0 auto", padding: "1rem 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -259,7 +259,7 @@ export default function HomePage() {
       </section>
 
       {/* SECTION 8 — FOOTER */}
-      <footer style={{ borderTop: "1px solid #f3f4f6", padding: "1.5rem", textAlign: "center", color: "#9ca3af", fontSize: "0.875rem" }}>
+      <footer style={{ borderTop: "1px solid #f3f4f6", padding: "1.5rem", textAlign: "center", color: "#9ca3af", fontSize: "0.875rem", marginTop: "auto" }}>
         LineHop™ 2026 · contact@linehop.ro
       </footer>
     </div>

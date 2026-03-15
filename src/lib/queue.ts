@@ -61,9 +61,7 @@ export async function sendCallNotification(entry: {
 
 // ─── Queue read ───────────────────────────────────────────────────────────────
 export async function getQueue(restaurantId: string) {
-  const settings = await getRestaurantSettings(restaurantId)
-  const bufferMs = settings.bufferVisibilitySec * 1000
-  const bufferAgo  = new Date(Date.now() - bufferMs)
+  const TEN_MIN_AGO = new Date(Date.now() - 10 * 60 * 1000)
   const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000)
 
   return prisma.waitlistEntry.findMany({
@@ -71,9 +69,9 @@ export async function getQueue(restaurantId: string) {
       restaurantId,
       OR: [
         { status: { in: ['WAITING', 'CALLED', 'CONFIRMED'] } },
-        // Keep NO_SHOW visible for configurable buffer window
-        { status: 'NO_SHOW_CONFIRM', expiredAt: { gte: bufferAgo } },
-        { status: 'NO_SHOW_ARRIVAL', expiredAt: { gte: bufferAgo } },
+        // Keep NO_SHOW visible for 10 minutes (hardcoded, not configurable)
+        { status: 'NO_SHOW_CONFIRM', expiredAt: { gte: TEN_MIN_AGO } },
+        { status: 'NO_SHOW_ARRIVAL', expiredAt: { gte: TEN_MIN_AGO } },
         // Recent SEATED/SKIPPED for undo (last 30 min)
         { status: 'SEATED',  seatedAt:  { gte: thirtyMinAgo } },
         { status: 'SKIPPED', skippedAt: { gte: thirtyMinAgo } },

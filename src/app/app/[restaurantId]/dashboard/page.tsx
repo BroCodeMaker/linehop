@@ -575,8 +575,9 @@ export default function DashboardPage() {
   const expiredEntries = entries.filter(e => {
     if (!["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status) && !isLocallyExpiredFn(e)) return false;
     // Auto-hide NO_SHOW entries after 10 minutes (client-side filter, no DB delete)
-    if (["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status) && e.expiredAt) {
-      const minutesSince = (Date.now() - new Date(e.expiredAt).getTime()) / 60000;
+    if (["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status)) {
+      const refTime = e.expiredAt || e.createdAt;
+      const minutesSince = (Date.now() - new Date(refTime).getTime()) / 60000;
       if (minutesSince > 10) return false;
     }
     return true;
@@ -594,7 +595,7 @@ export default function DashboardPage() {
   void handleLogout;
 
   return (
-    <div style={{ minHeight: "100vh", background: FOOD_BG, fontFamily: "system-ui, sans-serif" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: FOOD_BG, fontFamily: "system-ui, sans-serif" }}>
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
@@ -1069,7 +1070,7 @@ export default function DashboardPage() {
           {sseConnected ? t("live_updates_active") : t("reconnecting_polling")}
         </p>
 
-        <div style={{ textAlign: "center", padding: "16px", fontSize: 12, color: "#9ca3af", borderTop: "1px solid #f3f4f6", marginTop: 24 }}>
+        <div style={{ textAlign: "center", padding: "16px", fontSize: 12, color: "#9ca3af", borderTop: "1px solid #f3f4f6", marginTop: "auto" }}>
           LineHop™ 2026
         </div>
       </div>
@@ -1297,7 +1298,7 @@ const s: Record<string, React.CSSProperties> = {
   logo: { fontSize: "18px", fontWeight: 800, color: "#1a1a1a" },
   headerRight: { display: "flex", alignItems: "center", gap: 12 },
   logoutBtn: { padding: "6px 14px", background: "transparent", color: "#9ca3af", border: "1.5px solid #e5e7eb", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: 600 },
-  body: { padding: "20px 16px", maxWidth: 1100, margin: "0 auto" },
+  body: { padding: "20px 16px", maxWidth: 1100, margin: "0 auto", flex: 1, display: "flex", flexDirection: "column" },
   statusCard: { background: "rgba(255,255,255,0.95)", borderRadius: "16px", padding: "16px 20px", marginBottom: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" },
   statusLabel: { fontSize: "12px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: "10px" },
   statusRow: { display: "flex", gap: "8px", flexWrap: "wrap" as const },
