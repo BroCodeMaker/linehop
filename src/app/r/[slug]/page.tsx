@@ -10,6 +10,9 @@ type RestaurantInfo = {
   queueLength: number;
   estimatedWaitMinutes: number;
   waitMinutesPerGroup: number;
+  maxPartySize: number;
+  maxQueueSize: number;
+  queueFull: boolean;
 };
 
 const FOOD_BG = `radial-gradient(ellipse at 10% 20%, rgba(251,146,60,0.10) 0%, transparent 50%),

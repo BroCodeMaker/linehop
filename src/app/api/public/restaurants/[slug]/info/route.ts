@@ -15,7 +15,7 @@ export async function GET(
         slug: true,
         status: true,
         listClosed: true,
-        settings: { select: { waitMinutesPerGroup: true, estimatedTableTimeMin: true, useCalculatedAvgTime: true, maxPartySize: true } },
+        settings: { select: { waitMinutesPerGroup: true, estimatedTableTimeMin: true, useCalculatedAvgTime: true, maxPartySize: true, maxQueueSize: true } },
       },
     });
 
