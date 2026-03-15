@@ -130,6 +130,24 @@ export default function AdminRestaurantPage() {
         fontFamily: "system-ui, sans-serif",
       }}
     >
+      <style>{`
+        .admin-overview-card { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+        .admin-overview-info { flex: 1; min-width: 200px; }
+        .admin-overview-qr { text-align: center; }
+        .admin-entry-row { display: flex; align-items: center; gap: 16px; }
+        .admin-entry-status { font-size: 11px; font-weight: 700; color: #6b7280; min-width: 90px; }
+        .admin-entry-name { font-weight: 600; color: #111; flex: 1; }
+        .admin-entry-meta { font-size: 13px; color: #6b7280; }
+        .admin-entry-time { font-size: 12px; color: #9ca3af; }
+        @media (max-width: 600px) {
+          .admin-overview-card { flex-direction: column; gap: 20px; }
+          .admin-overview-qr { width: 100%; display: flex; flex-direction: column; align-items: center; }
+          .admin-overview-info { min-width: unset; width: 100%; }
+          .admin-entry-row { flex-wrap: wrap; gap: 8px; }
+          .admin-entry-status { min-width: unset; }
+          .admin-overview-card a { font-size: 12px; padding: 7px 12px; }
+        }
+      `}</style>
       {/* Header */}
       <div
         style={{
@@ -160,13 +178,9 @@ export default function AdminRestaurantPage() {
             boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
             padding: 24,
             marginBottom: 20,
-            display: "flex",
-            gap: 32,
-            alignItems: "flex-start",
-            flexWrap: "wrap",
           }}
         >
-          <div style={{ flex: 1, minWidth: 200 }}>
+          <div className="admin-overview-card"><div className="admin-overview-info">
             <h2
               style={{ margin: "0 0 12px", fontSize: 20, fontWeight: 700, color: "#111" }}
             >
@@ -236,7 +250,7 @@ export default function AdminRestaurantPage() {
           </div>
 
           {/* QR Code */}
-          <div style={{ textAlign: "center" }}>
+          <div className="admin-overview-qr">
             {qrDataUrl ? (
               <img
                 src={qrDataUrl}
@@ -250,6 +264,7 @@ export default function AdminRestaurantPage() {
               {publicUrl}
             </div>
           </div>
+          </div>{/* end admin-overview-card */}
         </div>
 
         {/* Settings card */}
