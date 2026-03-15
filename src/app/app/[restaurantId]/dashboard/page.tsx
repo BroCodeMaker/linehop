@@ -126,15 +126,16 @@ function CountdownTimer({ deadline, totalSec }: { deadline: string; totalSec: nu
 
 function BufferTimer({ expiredAt }: { expiredAt: string }) {
   const [secs, setSecs] = useState(0);
+  const { t } = useTranslation();
   useEffect(() => {
     const expiry = new Date(expiredAt).getTime() + 10 * 60 * 1000;
     const update = () => setSecs(Math.max(0, Math.floor((expiry - Date.now()) / 1000)));
     update();
-    const t = setInterval(update, 1000);
-    return () => clearInterval(t);
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
   }, [expiredAt]);
   const m = Math.floor(secs / 60), sc = secs % 60;
-  return <span style={{ fontSize: 11, color: "#9ca3af" }}>ascuns în {m}:{sc.toString().padStart(2, "0")}</span>;
+  return <span style={{ fontSize: 11, color: "#9ca3af" }}>{t("hidden_in")} {m}:{sc.toString().padStart(2, "0")}</span>;
 }
 
 // Shows how long an entry has been in expired state (since deadline passed)
