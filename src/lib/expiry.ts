@@ -1,5 +1,5 @@
 import prisma from './prisma'
-import { callNext } from './queue'
+import { callNext, getRestaurantSettings } from './queue'
 import { sendWhatsAppMessage } from './notify'
 import { emitUpdate } from './emitter'
 
@@ -33,21 +33,29 @@ export async function expireEntries(): Promise<number> {
 
   if (totalExpired === 0) return 0
 
-  // Send WhatsApp notification to each expired client (Feature 10)
+  // Send WhatsApp notification to each expired client — use per-restaurant settings with {name}
+  const settingsCache = new Map<string, Awaited<ReturnType<typeof getRestaurantSettings>>>()
+  async function getSettings(restaurantId: string) {
+    if (!settingsCache.has(restaurantId)) {
+      settingsCache.set(restaurantId, await getRestaurantSettings(restaurantId))
+    }
+    return settingsCache.get(restaurantId)!
+  }
+
   for (const entry of calledExpiring) {
-    await sendWhatsAppMessage(
-      entry.id,
-      entry.phoneE164,
-      `Din păcate nu ați confirmat la timp. Locul dumneavoastră a fost dat mai departe.`
-    ).catch(() => { /* don't block on notify failure */ })
+    const settings = await getSettings(entry.restaurantId)
+    const name = entry.guestName ?? 'Stimate client'
+    const msg = settings.msgWhatsappExpire.replace('{name}', name)
+    await sendWhatsAppMessage(entry.id, entry.phoneE164, msg)
+      .catch(() => { /* don't block on notify failure */ })
   }
 
   for (const entry of confirmedExpiring) {
-    await sendWhatsAppMessage(
-      entry.id,
-      entry.phoneE164,
-      `Din păcate nu v-ați prezentat la timp. Locul dumneavoastră a fost dat mai departe.`
-    ).catch(() => { /* don't block on notify failure */ })
+    const settings = await getSettings(entry.restaurantId)
+    const name = entry.guestName ?? 'Stimate client'
+    const msg = settings.msgWhatsappExpire.replace('{name}', name)
+    await sendWhatsAppMessage(entry.id, entry.phoneE164, msg)
+      .catch(() => { /* don't block on notify failure */ })
   }
 
   // Auto-call next for each affected restaurant (if still FULL)

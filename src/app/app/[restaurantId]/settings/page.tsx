@@ -19,6 +19,7 @@ type Settings = {
   msgWhatsappCall: string;
   msgWhatsappExpire: string;
   msgWhatsappCallAgain: string;
+  msgWhatsappWaiting: string;
 };
 
 export default function SettingsPage() {
@@ -36,6 +37,7 @@ export default function SettingsPage() {
     msgWhatsappCall: "Vă rugăm să vă prezentați la intrare în 2 minute.",
     msgWhatsappExpire: "Din păcate locul dumneavoastră a expirat.",
     msgWhatsappCallAgain: "Vă mai acordăm o șansă, vă rugăm să vă prezentați.",
+    msgWhatsappWaiting: "📣 Mulțumim pentru răbdare, {name}! Mai sunt {position} grupuri înaintea dvs. Încă sunteți în lista noastră de așteptare.",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -186,20 +188,30 @@ export default function SettingsPage() {
             {/* WhatsApp messages section */}
             <div style={s.card}>
               <div style={s.sectionTitle}>💬 Mesaje WhatsApp</div>
+              <div style={{ ...s.fieldFull, marginBottom: 12 }}>
+                <span style={{ fontSize: 12, color: "#6b7280", background: "#f3f4f6", padding: "6px 10px", borderRadius: 6, display: "inline-block" }}>
+                  💡 Placeholder disponibil: <code>{"{name}"}</code> — înlocuit cu numele clientului (sau "Stimate client" dacă lipsește)
+                </span>
+              </div>
               <div style={s.fieldFull}>
                 <label style={s.label}>Mesaj chemare</label>
-                <p style={s.hint}>Trimis când clientul este chemat la intrare</p>
+                <p style={s.hint}>Trimis când clientul este chemat la intrare · suportă <code>{"{name}"}</code></p>
                 <textarea value={form.msgWhatsappCall} onChange={e => setStr("msgWhatsappCall", e.target.value)} style={s.textarea} rows={3} required />
               </div>
               <div style={s.fieldFull}>
                 <label style={s.label}>Mesaj expirare</label>
-                <p style={s.hint}>Trimis când locul clientului a expirat (NO_SHOW)</p>
+                <p style={s.hint}>Trimis când locul clientului a expirat (NO_SHOW) · suportă <code>{"{name}"}</code></p>
                 <textarea value={form.msgWhatsappExpire} onChange={e => setStr("msgWhatsappExpire", e.target.value)} style={s.textarea} rows={3} required />
               </div>
               <div style={s.fieldFull}>
-                <label style={s.label}>Mesaj rechemarare</label>
-                <p style={s.hint}>Trimis la Call Again (a doua șansă)</p>
+                <label style={s.label}>Mesaj rechemare</label>
+                <p style={s.hint}>Trimis la Call Again (a doua șansă) · suportă <code>{"{name}"}</code></p>
                 <textarea value={form.msgWhatsappCallAgain} onChange={e => setStr("msgWhatsappCallAgain", e.target.value)} style={s.textarea} rows={3} required />
+              </div>
+              <div style={s.fieldFull}>
+                <label style={s.label}>Mesaj așteptare</label>
+                <p style={s.hint}>Trimis la 10 min de așteptare, apoi la fiecare 15 min · suportă <code>{"{name}"}</code> și <code>{"{position}"}</code> (grupuri înainte)</p>
+                <textarea value={form.msgWhatsappWaiting} onChange={e => setStr("msgWhatsappWaiting", e.target.value)} style={s.textarea} rows={3} required />
               </div>
             </div>
 

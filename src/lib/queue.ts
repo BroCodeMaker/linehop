@@ -14,6 +14,11 @@ export async function getRestaurantSettings(restaurantId: string) {
     bufferVisibilitySec:  s?.bufferVisibilitySec  ?? 600,
     maxCallAgain:         s?.maxCallAgain          ?? 1,
     waitMinutesPerGroup:  s?.waitMinutesPerGroup   ?? 10,
+    msgWhatsappCall:      s?.msgWhatsappCall       ?? 'Vă rugăm să vă prezentați la intrare în 2 minute.',
+    msgWhatsappExpire:    s?.msgWhatsappExpire     ?? 'Din păcate locul dumneavoastră a expirat.',
+    msgWhatsappCallAgain: s?.msgWhatsappCallAgain  ?? 'Vă mai acordăm o șansă, vă rugăm să vă prezentați.',
+    msgWhatsappWaiting:   (s as { msgWhatsappWaiting?: string } | null)?.msgWhatsappWaiting
+      ?? '📣 Mulțumim pentru răbdare, {name}! Mai sunt {position} grupuri înaintea dvs. Încă sunteți în lista noastră de așteptare.',
   }
 }
 
@@ -22,14 +27,19 @@ export async function sendCallNotification(entry: {
   id: string
   phoneE164: string
   publicToken: string
+  guestName?: string | null
+  restaurantId: string
 }) {
   // Inline import to avoid circular deps with notify→queue
   const { sendWhatsAppMessage } = await import('./notify')
+  const settings = await getRestaurantSettings(entry.restaurantId)
+  const name = entry.guestName ?? 'Stimate client'
   const statusUrl = `${APP_URL}/s/${entry.publicToken}`
+  const callMsg = settings.msgWhatsappCall.replace('{name}', name)
   await sendWhatsAppMessage(
     entry.id,
     entry.phoneE164,
-    `Masa dumneavoastră este gata! Vă rugăm să confirmați prezența în 2 minute. 🍽️\n\nVizualizați statusul: ${statusUrl}`
+    `${callMsg}\n\nVizualizați statusul: ${statusUrl}`
   ).catch(() => {})
 
   // Schedule 60 s reminder (best-effort; lost on serverless cold starts)
@@ -122,7 +132,7 @@ export async function callEntry(restaurantId: string, entryId: string) {
 export async function seatEntry(restaurantId: string, entryId: string) {
   clearReminderTimer(entryId)
   return prisma.waitlistEntry.updateMany({
-    where: { id: entryId, restaurantId, status: { in: ['CALLED', 'CONFIRMED'] } },
+    where: { id: entryId, restaurantId, status: { in: ['WAITING', 'CALLED', 'CONFIRMED'] } },
     data: { status: 'SEATED', seatedAt: new Date() },
   })
 }

@@ -199,7 +199,10 @@ export default function DashboardPage() {
   const [showErrorLog, setShowErrorLog] = useState(false);
   const [errorLogs, setErrorLogs] = useState<ErrorLogEntry[]>([]);
   const [loadingErrorLog, setLoadingErrorLog] = useState(false);
+  const [seatConfirmEntry, setSeatConfirmEntry] = useState<Entry | null>(null);
+  const [undoState, setUndoState] = useState<Entry | null>(null);
   const sseRef = useRef<EventSource | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchQueue = useCallback(async () => {
     try {
@@ -268,6 +271,11 @@ export default function DashboardPage() {
     refreshAll();
   }, [refreshAll]);
 
+  // Cleanup undo timer on unmount
+  useEffect(() => {
+    return () => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); };
+  }, []);
+
   async function handleSetStatus(newStatus: RestStatus) {
     if (newStatus === restStatus) return;
     if (newStatus === "CLOSED" && !confirm("Închizi restaurantul? Toți clienții din coadă vor fi notificați și lista se va goli.")) return;
@@ -331,13 +339,54 @@ export default function DashboardPage() {
   }
 
   async function handleAction(entryId: string, action: string) {
+    const prevEntry = entries.find(e => e.id === entryId);
     const res = await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/${action}`, { method: "POST" });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       setMessage({ text: `❌ ${d.error ?? "Eroare"}`, type: "info" });
       setTimeout(() => setMessage(null), 3000);
+    } else if (prevEntry) {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      setUndoState(prevEntry);
+      undoTimerRef.current = setTimeout(() => setUndoState(null), 10000);
     }
     await refreshAll();
+  }
+
+  async function handleGeneralUndo() {
+    if (!undoState) return;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    const entryToRestore = undoState;
+    setUndoState(null);
+    await fetch(`/api/restaurants/${restaurantId}/entries/${entryToRestore.id}/undo`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        previousStatus: entryToRestore.status,
+        previousData: {
+          calledAt: entryToRestore.calledAt ?? null,
+          confirmedAt: entryToRestore.confirmedAt ?? null,
+          seatedAt: entryToRestore.seatedAt ?? null,
+          skippedAt: entryToRestore.skippedAt ?? null,
+          expiredAt: entryToRestore.expiredAt ?? null,
+          expiredReason: entryToRestore.expiredReason ?? null,
+          confirmDeadlineAt: entryToRestore.confirmDeadlineAt ?? null,
+          arrivalDeadlineAt: entryToRestore.arrivalDeadlineAt ?? null,
+          callAgainCount: entryToRestore.callAgainCount ?? 0,
+        },
+      }),
+    });
+    await refreshAll();
+    setMessage({ text: "↩️ Acțiune anulată", type: "ok" });
+    setTimeout(() => setMessage(null), 2000);
+  }
+
+  function handleSeatClick(entry: Entry) {
+    if (entry.status === "WAITING") {
+      setSeatConfirmEntry(entry);
+    } else {
+      handleAction(entry.id, "seat");
+    }
   }
 
   async function handleUndo(entryId: string, action: "undo-seated" | "undo-skipped" | "re-call") {
@@ -498,9 +547,15 @@ export default function DashboardPage() {
     if (isLocallyExpiredFn(e)) return false;
     return true;
   });
-  const expiredEntries = entries.filter(e =>
-    ["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status) || isLocallyExpiredFn(e)
-  );
+  const expiredEntries = entries.filter(e => {
+    if (!["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status) && !isLocallyExpiredFn(e)) return false;
+    // Auto-hide NO_SHOW entries after 15 minutes (client-side filter, no DB delete)
+    if (["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status) && e.expiredAt) {
+      const minutesSince = (Date.now() - new Date(e.expiredAt).getTime()) / 60000;
+      if (minutesSince > 15) return false;
+    }
+    return true;
+  });
   const recentEntries = entries.filter(e => ["SEATED", "SKIPPED"].includes(e.status));
 
   const statusCfg: Record<string, { label: string; active: string; icon: string }> = {
@@ -523,7 +578,11 @@ export default function DashboardPage() {
       `}</style>
 
       {/* Nav */}
-      <AdminNav restaurantId={restaurantId} />
+      <AdminNav
+        restaurantId={restaurantId}
+        onSupport={() => setShowSupport(true)}
+        onErrorLog={openErrorLog}
+      />
 
       {/* Live status indicator */}
       <div style={{ background: "#fff", borderBottom: "1px solid #f3f4f6", padding: "6px 20px", display: "flex", alignItems: "center", gap: 8 }}>
@@ -645,12 +704,6 @@ export default function DashboardPage() {
           </button>
           <button onClick={openQR} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#f0fdf4", color: "#166534", border: "2px solid #86efac" }}>
             📱 QR Code
-          </button>
-          <button onClick={() => setShowSupport(true)} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#fef3c7", color: "#92400e", border: "2px solid #fcd34d" }}>
-            🆘 Support
-          </button>
-          <button onClick={openErrorLog} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#f0f9ff", color: "#0c4a6e", border: "2px solid #7dd3fc" }}>
-            📋 Error Log
           </button>
           <button onClick={async () => {
             if (!confirm("Ștergi toată coada? (doar pentru teste)")) return;
@@ -843,6 +896,60 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Seat Without Call Confirmation Modal */}
+        {seatConfirmEntry && (
+          <div style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100,
+            display: "flex", alignItems: "center", justifyContent: "center"
+          }} onClick={() => setSeatConfirmEntry(null)}>
+            <div style={{
+              background: "#fff", borderRadius: 20, padding: 32,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)", maxWidth: 400, width: "90%"
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{ fontSize: 32, textAlign: "center" as const, marginBottom: 12 }}>⚠️</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1a1a", textAlign: "center" as const, marginBottom: 8 }}>
+                Clientul nu a fost chemat
+              </div>
+              <div style={{ fontSize: 14, color: "#6b7280", textAlign: "center" as const, marginBottom: 24 }}>
+                <strong>{seatConfirmEntry.guestName ?? seatConfirmEntry.phoneE164}</strong> ({seatConfirmEntry.partySize} pers.) va fi sezat direct, fără a fi chemat în prealabil.
+              </div>
+              <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+                <button
+                  onClick={() => setSeatConfirmEntry(null)}
+                  style={{ padding: "10px 24px", background: "transparent", color: "#6b7280", border: "1.5px solid #e5e7eb", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 600 }}
+                >
+                  Anulează
+                </button>
+                <button
+                  onClick={() => { const e = seatConfirmEntry; setSeatConfirmEntry(null); handleAction(e.id, "seat"); }}
+                  style={{ padding: "10px 24px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
+                >
+                  Confirmă seated
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Undo Toast */}
+        {undoState && (
+          <div style={{
+            position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+            background: "#1f2937", color: "#fff", borderRadius: 12,
+            padding: "12px 20px", display: "flex", alignItems: "center", gap: 12,
+            zIndex: 200, boxShadow: "0 4px 20px rgba(0,0,0,0.3)", fontSize: 14, fontWeight: 600,
+            whiteSpace: "nowrap" as const,
+          }}>
+            <span>Acțiune efectuată</span>
+            <button
+              onClick={handleGeneralUndo}
+              style={{ padding: "6px 14px", background: "#fb923c", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700 }}
+            >
+              ↩️ Undo
+            </button>
+          </div>
+        )}
+
         {/* Active Queue */}
         {loading ? (
           <p style={s.muted}>Se încarcă coada...</p>
@@ -861,6 +968,7 @@ export default function DashboardPage() {
                     editForm={editForm}
                     editSubmitting={editSubmitting}
                     onAction={handleAction}
+                    onSeat={handleSeatClick}
                     onUndo={handleUndo}
                     onStartEdit={startEdit}
                     onEditChange={setEditForm}
@@ -942,6 +1050,7 @@ type EntryRowProps = {
   editForm: { guestName: string; partySize: number; phoneE164: string };
   editSubmitting: boolean;
   onAction: (id: string, action: string) => void;
+  onSeat: (entry: Entry) => void;
   onUndo: (id: string, action: "undo-seated" | "undo-skipped" | "re-call") => void;
   onStartEdit: (entry: Entry) => void;
   onEditChange: (form: { guestName: string; partySize: number; phoneE164: string }) => void;
@@ -949,7 +1058,7 @@ type EntryRowProps = {
   onEditCancel: () => void;
 };
 
-function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction, onUndo, onStartEdit, onEditChange, onEditSave, onEditCancel }: EntryRowProps) {
+function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction, onSeat, onUndo, onStartEdit, onEditChange, onEditSave, onEditCancel }: EntryRowProps) {
   const now = Date.now();
   const isLongWait = entry.status === "WAITING" && now - new Date(entry.createdAt).getTime() > 30 * 60 * 1000;
   const locallyExpired =
@@ -1073,7 +1182,7 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
         )}
         {["WAITING", "CALLED", "CONFIRMED"].includes(entry.status) && (
           <>
-            <button onClick={() => onAction(entry.id, "seat")} style={{ ...s.actionBtn, background: "#2563eb" }}>Seat</button>
+            <button onClick={() => onSeat(entry)} style={{ ...s.actionBtn, background: "#2563eb" }}>Seat</button>
             <button onClick={() => onAction(entry.id, "skip")} style={{ ...s.actionBtn, background: "#9ca3af" }}>Skip</button>
           </>
         )}

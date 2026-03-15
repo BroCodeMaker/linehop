@@ -4,9 +4,11 @@ import { useRouter, usePathname } from "next/navigation";
 
 interface AdminNavProps {
   restaurantId: string;
+  onSupport?: () => void;
+  onErrorLog?: () => void;
 }
 
-export default function AdminNav({ restaurantId }: AdminNavProps) {
+export default function AdminNav({ restaurantId, onSupport, onErrorLog }: AdminNavProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -72,6 +74,16 @@ export default function AdminNav({ restaurantId }: AdminNavProps) {
         >
           📊 Statistici
         </button>
+        {onSupport && (
+          <button onClick={onSupport} style={{ ...s.tab, color: "#92400e", background: "#fef3c7" }}>
+            🆘 Support
+          </button>
+        )}
+        {onErrorLog && (
+          <button onClick={onErrorLog} style={{ ...s.tab, color: "#0c4a6e", background: "#e0f2fe" }}>
+            📋 Error Log
+          </button>
+        )}
       </div>
 
       {/* Right actions */}

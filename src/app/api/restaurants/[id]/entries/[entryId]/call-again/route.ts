@@ -63,10 +63,12 @@ export async function POST(
     // Send WhatsApp + schedule 60 s reminder
     if (entry.phoneE164 && entry.phoneE164 !== '+00000000000') {
       const statusUrl = `${APP_URL}/s/${entry.publicToken}`
+      const name = entry.guestName ?? 'Stimate client'
+      const callAgainMsg = settings.msgWhatsappCallAgain.replace('{name}', name)
       await sendWhatsAppMessage(
         entryId,
         entry.phoneE164,
-        `Vă mai acordăm o șansă! Vă rugăm să confirmați prezența în ${settings.confirmTimerSec / 60} minute.\n\n✅ Confirmați: ${statusUrl}`
+        `${callAgainMsg}\n\n✅ Confirmați: ${statusUrl}`
       ).catch(() => {})
 
       scheduleReminder(entryId, 60 * 1000, async () => {

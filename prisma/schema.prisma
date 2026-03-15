@@ -35,6 +35,7 @@ model RestaurantSettings {
   msgWhatsappCall       String     @default("Vă rugăm să vă prezentați la intrare în 2 minute.")
   msgWhatsappExpire     String     @default("Din păcate locul dumneavoastră a expirat.")
   msgWhatsappCallAgain  String     @default("Vă mai acordăm o șansă, vă rugăm să vă prezentați.")
+  msgWhatsappWaiting    String     @default("📣 Mulțumim pentru răbdare, {name}! Mai sunt {position} grupuri înaintea dvs. Încă sunteți în lista noastră de așteptare.")
   useCalculatedAvgTime  Boolean    @default(false)
   updatedAt             DateTime   @updatedAt
   restaurant            Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
@@ -71,8 +72,9 @@ model WaitlistEntry {
   canceledAt        DateTime?
   confirmDeadlineAt DateTime?
   arrivalDeadlineAt DateTime?
-  callAgainCount    Int            @default(0)
-  notes             String?
+  callAgainCount        Int            @default(0)
+  notes                 String?
+  lastWaitingNotifiedAt DateTime?
   messageEvents     MessageEvent[]
   restaurant        Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
