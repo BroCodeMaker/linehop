@@ -280,7 +280,7 @@ const ro = {
   status_cancel_modal_yes: "Da, anulează",
 
   // Restaurant list (app index)
-  app_title: "🍽️ WaitList Admin",
+  app_title: "🍽️ LineHop Admin",
   app_new_restaurant: "➕ Restaurant nou",
   app_your_restaurants: "Restaurantele tale",
   app_add_restaurant: "🏪 Adaugă restaurant nou",
@@ -618,7 +618,7 @@ const en: typeof ro = {
   status_cancel_modal_no: "No, stay",
   status_cancel_modal_yes: "Yes, cancel",
 
-  app_title: "🍽️ WaitList Admin",
+  app_title: "🍽️ LineHop Admin",
   app_new_restaurant: "➕ New restaurant",
   app_your_restaurants: "Your restaurants",
   app_add_restaurant: "🏪 Add new restaurant",
@@ -955,7 +955,7 @@ const hu: typeof ro = {
   status_cancel_modal_no: "Nem, maradok",
   status_cancel_modal_yes: "Igen, lemondja",
 
-  app_title: "🍽️ WaitList Admin",
+  app_title: "🍽️ LineHop Admin",
   app_new_restaurant: "➕ Új étterem",
   app_your_restaurants: "Éttermei",
   app_add_restaurant: "🏪 Új étterem hozzáadása",
