@@ -1,0 +1,100 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2026-03-16T01:00:00.000Z",
+  "testFramework": "vitest",
+  "testFile": "src/__tests__/waitlist.test.ts",
+  "regressions": [
+    {
+      "id": "REG-001",
+      "name": "Skip nu auto-cheamă urmatorul",
+      "description": "skipEntry() nu trebuie să apeleze callNext() automat după skip",
+      "checkMethod": "code-review",
+      "location": "src/lib/queue.ts → skipEntry, src/app/api/restaurants/[id]/entries/[entryId]/skip/route.ts",
+      "lastStatus": "PASS",
+      "lastChecked": "2026-03-16T01:00:00.000Z"
+    },
+    {
+      "id": "REG-002",
+      "name": "Expired state după timer 0:00",
+      "description": "Intrările CALLED/CONFIRMED expirate trebuie să treacă la NO_SHOW_CONFIRM/NO_SHOW_ARRIVAL pe server, nu să rămână stuck la 0:00",
+      "checkMethod": "code-review",
+      "location": "src/lib/expiry.ts, src/app/app/[restaurantId]/dashboard/page.tsx → BufferTimer",
+      "lastStatus": "PASS",
+      "lastChecked": "2026-03-16T01:00:00.000Z"
+    },
+    {
+      "id": "REG-003",
+      "name": "Average >30min revert",
+      "description": "Dacă media calculată depășește 30min, se revine la valoarea manuală și se loghează evenimentul în ErrorLog",
+      "checkMethod": "code-review",
+      "location": "src/app/api/restaurants/[id]/stats/route.ts → AVG_CAP_MIN",
+      "lastStatus": "PASS",
+      "lastChecked": "2026-03-16T01:00:00.000Z"
+    },
+    {
+      "id": "REG-004",
+      "name": "Support form",
+      "description": "Ruta API error-log există (POST/GET), schema Prisma are ErrorLog model, formularul din dashboard trimite subject+description",
+      "checkMethod": "code-review",
+      "location": "src/app/api/restaurants/[id]/error-log/route.ts, prisma/schema.prisma → ErrorLog",
+      "lastStatus": "PASS",
+      "lastChecked": "2026-03-16T01:00:00.000Z"
+    }
+  ],
+  "jestTests": {
+    "totalSuites": 1,
+    "totalTests": 21,
+    "suites": [
+      "1. Guest joins → WAITING status",
+      "2. Admin calls next → CALLED, mock message sent",
+      "3. Guest confirms (webhook) → CONFIRMED",
+      "4. Arrival timer expires → NO_SHOW",
+      "5. Max queue enforced",
+      "6. Settings save/load correctly",
+      "7. Admin creates new restaurant",
+      "Queue operations",
+      "Notification adapter"
+    ]
+  },
+  "proposedTests": [
+    {
+      "id": "NEW-001",
+      "name": "Skip a CALLED entry (not just WAITING)",
+      "description": "skipEntry() acceptă status-uri WAITING/CALLED/CONFIRMED — trebuie test explicit că skip pe o intrare CALLED funcționează corect și NU triggherează re-call",
+      "priority": "high",
+      "addedAt": "2026-03-16T01:00:00.000Z",
+      "status": "pending"
+    },
+    {
+      "id": "NEW-002",
+      "name": "Call-again flow respectă maxCallAgain",
+      "description": "Un client chemat de maxCallAgain ori nu mai poate fi chemat din nou — testați că a doua chemare este respinsă când maxCallAgain=1",
+      "priority": "high",
+      "addedAt": "2026-03-16T01:00:00.000Z",
+      "status": "pending"
+    },
+    {
+      "id": "NEW-003",
+      "name": "Walk-in entry exclus din avg wait",
+      "description": "Intrările walk-in (phoneE164='+00000000000') nu trebuie incluse în calculul avgWaitMinutes din /stats — validare că avg calculat ignoră walk-ins",
+      "priority": "medium",
+      "addedAt": "2026-03-16T01:00:00.000Z",
+      "status": "pending"
+    }
+  ],
+  "runHistory": [
+    {
+      "date": "2026-03-16",
+      "passed": 21,
+      "failed": 0,
+      "warnings": 1,
+      "regressionsPassed": 4,
+      "regressionsFailed": 0
+    }
+  ],
+  "lessons": [
+    "Support form este implementat ca 'error-log' route, nu 'support_tickets' — denumire diferită față de spec dar funcțional echivalent",
+    "expiry.ts face auto-call next DOAR dacă restaurantul e în status FULL — comportament corect, previne chemări nedorite când lista e oprită",
+    "walk-in entries (phoneE164='+00000000000') sunt excluse din calculul avg wait — important de testat ca regression"
+  ]
+}

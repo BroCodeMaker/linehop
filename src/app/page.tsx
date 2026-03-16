@@ -105,19 +105,28 @@ export default function HomePage() {
 
       {/* SECTION 3 — BENEFICII RESTAURANT */}
       <section style={{ padding: "6rem 1.5rem" }}>
-        <div style={{ maxWidth: "48rem", margin: "0 auto" }}>
+        <div style={{ maxWidth: "64rem", margin: "0 auto" }}>
           <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 900, textAlign: "center", color: "#111827", marginBottom: "3.5rem" }}>
             {t("landing_benefits_title")}
           </h2>
-          <div style={{ backgroundColor: "#ffffff", borderRadius: "1.5rem", border: "1px solid #f3f4f6", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", padding: "2.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            {(["landing_benefit1", "landing_benefit2", "landing_benefit3", "landing_benefit4", "landing_benefit5"] as const).map((key) => (
-              <div key={key} style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
-                <span style={{ fontSize: "1.25rem", flexShrink: 0, marginTop: "0.125rem" }}>✅</span>
-                <span style={{ color: "#374151", fontSize: "1rem", lineHeight: 1.6 }}>{t(key)}</span>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "2rem 3rem" }}>
+            {([
+              { icon: "🪑", titleKey: "landing_benefit1_title", descKey: "landing_benefit1_desc" },
+              { icon: "📋", titleKey: "landing_benefit2_title", descKey: "landing_benefit2_desc" },
+              { icon: "😊", titleKey: "landing_benefit3_title", descKey: "landing_benefit3_desc" },
+              { icon: "❓", titleKey: "landing_benefit4_title", descKey: "landing_benefit4_desc" },
+              { icon: "🏃", titleKey: "landing_benefit5_title", descKey: "landing_benefit5_desc" },
+            ] as const).map(({ icon, titleKey, descKey }) => (
+              <div key={titleKey} style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
+                <span style={{ fontSize: "1.5rem", flexShrink: 0, marginTop: "0.125rem", opacity: 0.75 }}>{icon}</span>
+                <div>
+                  <p style={{ margin: "0 0 0.25rem", fontWeight: 700, color: "#111827", fontSize: "1rem", lineHeight: 1.4 }}>{t(titleKey)}</p>
+                  <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem", lineHeight: 1.6 }}>{t(descKey)}</p>
+                </div>
               </div>
             ))}
           </div>
-          <p style={{ textAlign: "center", color: "#9ca3af", marginTop: "2rem", fontSize: "1rem" }}>
+          <p style={{ textAlign: "center", color: "#9ca3af", fontStyle: "italic", marginTop: "3rem", fontSize: "1rem" }}>
             {t("landing_benefits_sub")}
           </p>
         </div>

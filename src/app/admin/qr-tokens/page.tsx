@@ -44,8 +44,8 @@ export default function QrTokensPage() {
 
   async function loadAll() {
     const [tokensRes, restsRes] = await Promise.all([
-      fetch("/api/admin/qr-tokens"),
-      fetch("/api/admin/restaurants"),
+      fetch("/api/admin/qr-tokens", { credentials: "include" }),
+      fetch("/api/admin/restaurants", { credentials: "include" }),
     ]);
     if (tokensRes.status === 401) { router.push("/admin/login"); return; }
     if (tokensRes.ok) setTokens(await tokensRes.json());
@@ -61,6 +61,7 @@ export default function QrTokensPage() {
     const res = await fetch("/api/admin/qr-tokens/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ count: generateCount }),
     });
     if (!res.ok) {
@@ -76,6 +77,7 @@ export default function QrTokensPage() {
     await fetch(`/api/admin/qr-tokens/${tokenId}/map`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ restaurantId: restaurantId || null }),
     });
     await loadAll();

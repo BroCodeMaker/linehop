@@ -1,0 +1,72 @@
+{
+  "date": "2026-03-16",
+  "runAt": "2026-03-16T01:00:19.000Z",
+  "summary": {
+    "passed": 21,
+    "failed": 0,
+    "warnings": 1,
+    "duration_ms": 491
+  },
+  "jestResults": {
+    "testSuites": 1,
+    "tests": 21,
+    "passed": 21,
+    "failed": 0,
+    "framework": "vitest@4.0.18"
+  },
+  "regressions": [
+    {
+      "id": "REG-001",
+      "name": "Skip nu auto-cheamă urmatorul",
+      "status": "PASS",
+      "details": "skipEntry() în queue.ts actualizează doar statusul la SKIPPED + clearReminderTimer(). API route-ul /skip nu apelează callNext() — corect. emitUpdate() este apelat pentru a actualiza UI-ul în timp real."
+    },
+    {
+      "id": "REG-002",
+      "name": "Expired state după timer 0:00",
+      "status": "PASS",
+      "details": "expiry.ts gestionează corect tranzițiile: CALLED→NO_SHOW_CONFIRM (confirmDeadlineAt < now) și CONFIRMED→NO_SHOW_ARRIVAL (arrivalDeadlineAt < now). BufferTimer component există în dashboard. Buton 'call_again_action' prezent în expired entries section. Auto-call next se face DOAR dacă restaurantul e FULL."
+    },
+    {
+      "id": "REG-003",
+      "name": "Average >30min revert",
+      "status": "PASS",
+      "details": "AVG_CAP_MIN = 30 în stats/route.ts. La depășire: revine la settings.waitMinutesPerGroup, loghează în ErrorLog cu subject='Avg wait time reverted', console.warn locat. Catch() pe prisma.errorLog.create pentru a nu bloca răspunsul."
+    },
+    {
+      "id": "REG-004",
+      "name": "Support form",
+      "status": "PASS",
+      "details": "Ruta /api/restaurants/[id]/error-log (GET+POST) există și este autentificată. Model ErrorLog în schema Prisma cu indexuri pe [restaurantId, status, createdAt]. Formularul din dashboard are câmpurile subject+description și trimite POST la error-log. Notificare OpenClaw automată la loguri noi.",
+      "warning": "Ruta se numește 'error-log' (nu 'support'), dar funcțional acoperă același scop. Nu e o problemă — mai degrabă o nomenclatură mai precisă."
+    }
+  ],
+  "newTestsAdded": [
+    {
+      "id": "NEW-001",
+      "name": "Skip a CALLED entry (not just WAITING)",
+      "reason": "skipEntry acceptă WAITING/CALLED/CONFIRMED dar testele existente acoperă doar WAITING. Un skip pe o intrare CALLED ar putea declanșa un re-call nedorit în alte implementări viitoare."
+    },
+    {
+      "id": "NEW-002",
+      "name": "Call-again flow respectă maxCallAgain",
+      "reason": "Setarea maxCallAgain există în RestaurantSettings și există ruta /call-again, dar suita actuală nu testează limita. Un client cu maxCallAgain=1 care e chemat a doua oară trebuie respins."
+    },
+    {
+      "id": "NEW-003",
+      "name": "Walk-in entry exclus din avg wait",
+      "reason": "walk-in entries cu phoneE164='+00000000000' sunt filtrate din avg wait calculation în stats/route.ts. Fără test, o modificare a query-ului ar putea include walk-ins și distorsiona media."
+    }
+  ],
+  "lessons": [
+    "Support form folosește 'error-log' ca nomenclatură internă — denumire mai precisă decât 'support_tickets', dar merită documentat în CHANGELOG",
+    "expiry.ts auto-call next este conditional (status=FULL) — protecție corectă împotriva chemărilor în lanț când waitlist-ul e oprit",
+    "walk-in entries (phoneE164='+00000000000') au tratament special în 3 locuri: stats avg, history page badge color, addManual route — edge case important"
+  ],
+  "codeHealth": {
+    "testCoverage": "core queue flows acoperite, lipsesc edge cases pentru call-again și walk-in",
+    "regressionDebt": 0,
+    "newProposedTests": 3,
+    "pendingTests": 3
+  }
+}
