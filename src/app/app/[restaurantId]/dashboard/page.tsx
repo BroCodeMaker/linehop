@@ -307,6 +307,14 @@ export default function DashboardPage() {
     return () => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); };
   }, []);
 
+  function logAudit(action: string, entryId?: string, metadata?: Record<string, unknown>) {
+    fetch("/api/audit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ restaurantId, entryId, action, metadata }),
+    }).catch(() => {});
+  }
+
   async function handleSetStatus(newStatus: RestStatus) {
     if (newStatus === restStatus) return;
     if (newStatus === "CLOSED" && !confirm(t("close_restaurant_confirm"))) return;
@@ -319,6 +327,7 @@ export default function DashboardPage() {
         credentials: "include",
       });
       if (res.ok) {
+        logAudit("STATUS_CHANGED", undefined, { from: restStatus, to: newStatus });
         setRestStatus(newStatus);
         await refreshAll();
         const msgs: Record<string, string> = {
@@ -360,6 +369,7 @@ export default function DashboardPage() {
       const res = await fetch(`/api/restaurants/${restaurantId}/call-next`, { method: "POST", credentials: "include" });
       const data = await res.json();
       if (data.ok && data.entry) {
+        logAudit("CALLED", data.entry.id, { guestName: data.entry.guestName, partySize: data.entry.partySize });
         setMessage({ text: t("msg_called").replace("{name}", data.entry.guestName ?? data.entry.phoneE164).replace("{size}", String(data.entry.partySize)), type: "ok" });
       } else {
         setMessage({ text: t("msg_no_waiting"), type: "info" });
@@ -377,10 +387,23 @@ export default function DashboardPage() {
       const d = await res.json().catch(() => ({}));
       setMessage({ text: `❌ ${d.error ?? t("error")}`, type: "info" });
       setTimeout(() => setMessage(null), 3000);
-    } else if (prevEntry) {
-      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-      setUndoState(prevEntry);
-      undoTimerRef.current = setTimeout(() => setUndoState(null), 10000);
+    } else {
+      const auditActionMap: Record<string, string> = {
+        seat: "SEATED",
+        skip: "SKIPPED",
+        cancel: "CANCELLED",
+        "call-again": "CALL_AGAIN",
+        call: "CALLED",
+      };
+      const auditAction = auditActionMap[action];
+      if (auditAction && prevEntry) {
+        logAudit(auditAction, entryId, { guestName: prevEntry.guestName, partySize: prevEntry.partySize });
+      }
+      if (prevEntry) {
+        if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+        setUndoState(prevEntry);
+        undoTimerRef.current = setTimeout(() => setUndoState(null), 10000);
+      }
     }
     await refreshAll();
   }
@@ -409,6 +432,7 @@ export default function DashboardPage() {
         },
       }),
     });
+    logAudit("UNDO", entryToRestore.id, { guestName: entryToRestore.guestName, previousStatus: entryToRestore.status });
     await refreshAll();
     setMessage({ text: t("msg_undo"), type: "ok" });
     setTimeout(() => setMessage(null), 2000);
@@ -494,6 +518,8 @@ export default function DashboardPage() {
         }),
       });
       if (res.ok) {
+        const addData = await res.json().catch(() => ({}));
+        logAudit("ADDED", addData.entry?.id, { guestName: manualForm.guestName, partySize: manualForm.partySize });
         setShowManualForm(false);
         setManualForm({ guestName: "", partySize: 2, phoneE164: "", notes: "" });
         await refreshAll();
@@ -507,12 +533,16 @@ export default function DashboardPage() {
 
   async function handleWalkIn(partySize: number) {
     setShowWalkIn(false);
-    await fetch(`/api/restaurants/${restaurantId}/entries/walk-in`, {
+    const wiRes = await fetch(`/api/restaurants/${restaurantId}/entries/walk-in`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ partySize, notes: walkInNotes || undefined }),
     });
+    if (wiRes.ok) {
+      const wiData = await wiRes.json().catch(() => ({}));
+      logAudit("SEATED", wiData.entry?.id, { guestName: "Walk-in", partySize, walkIn: true });
+    }
     setWalkInNotes("");
     await refreshAll();
     setMessage({ text: t("msg_walk_in_registered").replace("{size}", String(partySize)), type: "ok" });
