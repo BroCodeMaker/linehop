@@ -208,9 +208,23 @@ export default function JoinPage() {
           {error && <p style={s.error}>{error}</p>}
 
           <button type="submit" style={s.btn} disabled={submitting}>
-            {submitting ? t("join_submitting") : t("join_submit")}
+            {submitting ? t("join_submitting") : `${t("join_submit")} →`}
           </button>
         </form>
+
+        {/* Trust indicators */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, margin: "16px 0 4px" }}>
+          {[
+            { icon: "⚡", text: "durează 10 secunde" },
+            { icon: "📱", text: "notificare WhatsApp" },
+            { icon: "🚶", text: "nu trebuie să aștepți la intrare" },
+          ].map((item, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14 }}>{item.icon}</span>
+              <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 500 }}>{item.text}</span>
+            </div>
+          ))}
+        </div>
 
         <p style={s.muted}>{t("join_whatsapp_note")}</p>
       </div>
@@ -250,20 +264,20 @@ function FoodDecorations() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", fontFamily: "system-ui, sans-serif", position: "relative" },
-  card: { background: "rgba(255,255,255,0.96)", backdropFilter: "blur(8px)", borderRadius: "20px", padding: "32px 24px", width: "100%", maxWidth: "420px", boxShadow: "0 8px 40px rgba(0,0,0,0.12)", position: "relative", zIndex: 1 },
+  page: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", fontFamily: "'Inter', system-ui, sans-serif", position: "relative" },
+  card: { background: "rgba(255,255,255,0.97)", backdropFilter: "blur(10px)", borderRadius: "24px", padding: "28px 24px", width: "100%", maxWidth: "440px", boxShadow: "0 12px 48px rgba(0,0,0,0.13)", position: "relative", zIndex: 1 },
   headerEmoji: { fontSize: 44, textAlign: "center" as const, marginBottom: 8 },
-  title: { fontSize: "26px", fontWeight: 800, margin: "0 0 12px 0", textAlign: "center" as const, color: "#1a1a1a" },
-  banner: { padding: "10px 16px", borderRadius: "10px", fontWeight: 700, fontSize: "15px", textAlign: "center" as const, marginBottom: "16px" },
-  queueInfo: { display: "flex", alignItems: "center", background: "#fff8f0", border: "1.5px solid #fed7aa", borderRadius: "14px", padding: "18px", marginBottom: "20px" },
+  title: { fontSize: "22px", fontWeight: 900, margin: "0 0 12px 0", textAlign: "center" as const, color: "#1a1a1a", letterSpacing: "-0.02em" },
+  banner: { padding: "10px 16px", borderRadius: "12px", fontWeight: 700, fontSize: "14px", textAlign: "center" as const, marginBottom: "16px", lineHeight: 1.5 },
+  queueInfo: { display: "flex", alignItems: "center", background: "linear-gradient(135deg, #fff8f0, #fff3e8)", border: "2px solid #fed7aa", borderRadius: "16px", padding: "20px", marginBottom: "20px", boxShadow: "0 2px 10px rgba(232,119,34,0.08)" },
   qStat: { display: "flex", flexDirection: "column" as const, alignItems: "center", flex: 1 },
-  qNum: { fontSize: "38px", fontWeight: 800, color: "#ea580c", lineHeight: 1 },
-  qLabel: { fontSize: "12px", color: "#9a3412", marginTop: "4px", fontWeight: 600 },
-  qDivider: { width: "1px", height: "50px", background: "#fed7aa", margin: "0 8px" },
+  qNum: { fontSize: "44px", fontWeight: 900, color: "#E87722", lineHeight: 1, letterSpacing: "-0.03em" },
+  qLabel: { fontSize: "11px", color: "#9a3412", marginTop: "6px", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.04em", textAlign: "center" as const },
+  qDivider: { width: "1.5px", height: "56px", background: "#fed7aa", margin: "0 10px" },
   form: { display: "flex", flexDirection: "column" as const, gap: "4px", marginBottom: "12px" },
-  label: { fontSize: "13px", fontWeight: 600, color: "#555", marginTop: "8px" },
-  input: { padding: "12px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "16px", outline: "none", background: "#fafafa", marginBottom: "2px" },
-  btn: { marginTop: "12px", padding: "15px", background: "linear-gradient(135deg, #ea580c, #dc2626)", color: "#fff", border: "none", borderRadius: "12px", fontSize: "16px", fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(234,88,12,0.3)" },
+  label: { fontSize: "12px", fontWeight: 700, color: "#374151", marginTop: "10px", textTransform: "uppercase" as const, letterSpacing: "0.04em" },
+  input: { padding: "13px 14px", borderRadius: "12px", border: "1.5px solid #e5e7eb", fontSize: "16px", outline: "none", background: "#fafafa", marginBottom: "2px" },
+  btn: { marginTop: "14px", padding: "17px", background: "linear-gradient(135deg, #E87722, #d96a18)", color: "#fff", border: "none", borderRadius: "14px", fontSize: "17px", fontWeight: 800, cursor: "pointer", boxShadow: "0 6px 20px rgba(232,119,34,0.35)", letterSpacing: "-0.01em" },
   muted: { fontSize: "13px", color: "#9ca3af", textAlign: "center" as const, marginTop: "12px" },
-  error: { color: "#dc2626", fontSize: "13px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "6px", padding: "8px 12px" },
+  error: { color: "#dc2626", fontSize: "13px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 14px" },
 };

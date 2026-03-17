@@ -734,14 +734,17 @@ export default function DashboardPage() {
         )}
 
         {/* Action Buttons Row */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" as const }}>
+        <div style={{ marginBottom: 16 }}>
+          {/* CALL NEXT — dominant button */}
           <button
             onClick={handleCallNext}
             disabled={callingNext || waiting === 0 || restStatus === "CLOSED"}
-            style={{ ...s.callBtn, flex: 2, marginBottom: 0, minWidth: 160, opacity: (waiting === 0 || restStatus === "CLOSED") ? 0.4 : 1 }}
+            style={{ ...s.callBtn, width: "100%", marginBottom: 10, opacity: (waiting === 0 || restStatus === "CLOSED") ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
           >
+            <span style={{ fontSize: 22 }}>📲</span>
             {callingNext ? t("calling") : t("call_next")}
           </button>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
           <button onClick={() => setShowManualForm(v => !v)} style={{ ...s.toolBtn, flex: 1, minWidth: 130 }}>
             {t("add_manual")}
           </button>
@@ -758,6 +761,7 @@ export default function DashboardPage() {
           }} style={{ ...s.toolBtn, flex: 1, minWidth: 110, background: "#fff1f2", color: "#be123c", border: "2px solid #fda4af" }}>
             {t("reset_test")}
           </button>
+          </div>
         </div>
 
         {/* Manual Add Form */}
@@ -1030,9 +1034,12 @@ export default function DashboardPage() {
 
             {/* Expired / No-show Section */}
             {expiredEntries.length > 0 && (
-              <div style={{ marginTop: 20 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#ef4444", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 8 }}>
-                  {t("expired_section").replace("{count}", String(expiredEntries.length))}
+              <div style={{ marginTop: 24 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 10, padding: "10px 16px", marginBottom: 10 }}>
+                  <span style={{ fontSize: 16 }}>⚠️</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: "#dc2626", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>
+                    {t("expired_section").replace("{count}", String(expiredEntries.length))}
+                  </span>
                 </div>
                 <div style={s.tableWrap}>
                   {expiredEntries.map((entry, i) => (
@@ -1319,16 +1326,16 @@ const s: Record<string, React.CSSProperties> = {
   headerRight: { display: "flex", alignItems: "center", gap: 12 },
   logoutBtn: { padding: "6px 14px", background: "transparent", color: "#9ca3af", border: "1.5px solid #e5e7eb", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: 600 },
   body: { padding: "20px 16px", maxWidth: 1100, margin: "0 auto", flex: 1, display: "flex", flexDirection: "column" },
-  statusCard: { background: "rgba(255,255,255,0.95)", borderRadius: "16px", padding: "16px 20px", marginBottom: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" },
-  statusLabel: { fontSize: "12px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: "10px" },
-  statusRow: { display: "flex", gap: "8px", flexWrap: "wrap" as const },
-  statusBtn: { padding: "10px 18px", borderRadius: "10px", cursor: "pointer", fontSize: "14px", transition: "all 0.2s", flex: 1, minWidth: "100px" },
-  statsRow: { display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" as const },
-  statBox: { flex: 1, minWidth: "80px", borderRadius: "12px", padding: "10px 12px", display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 4 },
-  statNum: { fontSize: "28px", fontWeight: 800, lineHeight: 1 },
-  statLbl: { fontSize: "11px", fontWeight: 600 },
+  statusCard: { background: "rgba(255,255,255,0.97)", borderRadius: "18px", padding: "18px 22px", marginBottom: "16px", boxShadow: "0 2px 16px rgba(0,0,0,0.07)", border: "1px solid #f3f4f6" },
+  statusLabel: { fontSize: "11px", fontWeight: 800, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.07em", marginBottom: "12px" },
+  statusRow: { display: "flex", gap: "10px", flexWrap: "wrap" as const },
+  statusBtn: { padding: "13px 22px", borderRadius: "12px", cursor: "pointer", fontSize: "15px", fontWeight: 700, transition: "all 0.18s", flex: 1, minWidth: "110px", letterSpacing: "-0.01em" },
+  statsRow: { display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap" as const },
+  statBox: { flex: 1, minWidth: "90px", borderRadius: "14px", padding: "14px 16px", display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 5, boxShadow: "0 1px 6px rgba(0,0,0,0.04)" },
+  statNum: { fontSize: "34px", fontWeight: 900, lineHeight: 1, letterSpacing: "-0.03em" },
+  statLbl: { fontSize: "11px", fontWeight: 700, textAlign: "center" as const },
   msgBox: { border: "1.5px solid", borderRadius: "10px", padding: "10px 16px", marginBottom: "12px", fontSize: "14px", fontWeight: 600 },
-  callBtn: { padding: "16px", background: "linear-gradient(135deg, #16a34a, #15803d)", color: "#fff", border: "none", borderRadius: "12px", fontSize: "16px", fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 16px rgba(22,163,74,0.25)" },
+  callBtn: { padding: "20px 24px", background: "linear-gradient(135deg, #16a34a, #15803d)", color: "#fff", border: "none", borderRadius: "14px", fontSize: "18px", fontWeight: 900, cursor: "pointer", boxShadow: "0 6px 22px rgba(22,163,74,0.35)", letterSpacing: "-0.02em", textTransform: "uppercase" as const },
   toolBtn: { padding: "14px 16px", background: "#fff", border: "2px solid #e5e7eb", borderRadius: "12px", fontSize: "13px", fontWeight: 700, cursor: "pointer", color: "#374151" },
   manualForm: { background: "rgba(255,255,255,0.95)", borderRadius: "12px", padding: "16px", marginBottom: "16px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
   formGroup: { display: "flex", flexDirection: "column" as const, gap: 4 },
@@ -1337,9 +1344,9 @@ const s: Record<string, React.CSSProperties> = {
   submitBtn: { padding: "8px 18px", background: "#16a34a", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "14px" },
   cancelBtn: { padding: "8px 14px", background: "transparent", color: "#9ca3af", border: "1.5px solid #e5e7eb", borderRadius: "8px", cursor: "pointer", fontSize: "14px" },
   emptyState: { textAlign: "center" as const, padding: "48px 0", color: "#9ca3af", fontSize: "16px" },
-  tableWrap: { background: "rgba(255,255,255,0.95)", borderRadius: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflowX: "auto" },
-  badge: { fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "4px", background: "rgba(0,0,0,0.06)" },
-  actionBtn: { padding: "5px 12px", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "#fff" },
+  tableWrap: { background: "rgba(255,255,255,0.97)", borderRadius: "16px", boxShadow: "0 2px 14px rgba(0,0,0,0.07)", overflowX: "auto", border: "1px solid #f3f4f6" },
+  badge: { fontSize: "11px", fontWeight: 700, padding: "3px 10px", borderRadius: "20px", background: "rgba(0,0,0,0.06)", display: "inline-block" },
+  actionBtn: { padding: "7px 14px", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: 700, color: "#fff" },
   muted: { color: "#9ca3af", padding: "32px 0", textAlign: "center" as const },
   refresh: { fontSize: "11px", color: "#d1d5db", textAlign: "center" as const, marginTop: "24px" },
 };

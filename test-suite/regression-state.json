@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2026-03-16T01:00:00.000Z",
+  "lastUpdated": "2026-03-17T01:00:15.000Z",
   "testFramework": "vitest",
   "testFile": "src/__tests__/waitlist.test.ts",
   "regressions": [
@@ -68,7 +68,7 @@
     {
       "id": "NEW-002",
       "name": "Call-again flow respectă maxCallAgain",
-      "description": "Un client chemat de maxCallAgain ori nu mai poate fi chemat din nou — testați că a doua chemare este respinsă când maxCallAgain=1",
+      "description": "Un client chemat de maxCallAgain ori nu mai poate fi chemat din nou — testați că a doua chemare este respinsă când maxCallAgain=1. Codul există în call-again/route.ts:41.",
       "priority": "high",
       "addedAt": "2026-03-16T01:00:00.000Z",
       "status": "pending"
@@ -76,9 +76,33 @@
     {
       "id": "NEW-003",
       "name": "Walk-in entry exclus din avg wait",
-      "description": "Intrările walk-in (phoneE164='+00000000000') nu trebuie incluse în calculul avgWaitMinutes din /stats — validare că avg calculat ignoră walk-ins",
+      "description": "Intrările walk-in (phoneE164='+00000000000') nu trebuie incluse în calculul avgWaitMinutes din /stats — validare că avg calculat ignoră walk-ins. Codul există în stats/route.ts:27.",
       "priority": "medium",
       "addedAt": "2026-03-16T01:00:00.000Z",
+      "status": "pending"
+    },
+    {
+      "id": "NEW-004",
+      "name": "cancelEntry acceptă orice status (asimetrie față de skipEntry)",
+      "description": "skipEntry restricționează la WAITING/CALLED/CONFIRMED, dar cancelEntry nu verifică statusul. Edge case: cancel pe client SEATED — permis sau blocat? Trebuie documentat și testat.",
+      "priority": "medium",
+      "addedAt": "2026-03-17T01:00:15.000Z",
+      "status": "pending"
+    },
+    {
+      "id": "NEW-005",
+      "name": "maxQueueSize=0 blochează toți clienții",
+      "description": "isQueueFull() returnează true dacă activeCount >= maxQueueSize. La maxQueueSize=0, primul client e blocat. Admin poate seta accidental 0. Trebuie validare min=1 și test pentru comportament.",
+      "priority": "high",
+      "addedAt": "2026-03-17T01:00:15.000Z",
+      "status": "pending"
+    },
+    {
+      "id": "NEW-006",
+      "name": "activeCount scade corect după tranziții multiple",
+      "description": "Un client WAITING→CALLED→NO_SHOW_CONFIRM nu trebuie numărat ca activ. getQueue trebuie să returneze count corect la fiecare tranziție, fără inflație.",
+      "priority": "medium",
+      "addedAt": "2026-03-17T01:00:15.000Z",
       "status": "pending"
     }
   ],
@@ -90,11 +114,23 @@
       "warnings": 1,
       "regressionsPassed": 4,
       "regressionsFailed": 0
+    },
+    {
+      "date": "2026-03-17",
+      "passed": 21,
+      "failed": 0,
+      "warnings": 0,
+      "regressionsPassed": 4,
+      "regressionsFailed": 0,
+      "newTestsAdded": 3
     }
   ],
   "lessons": [
     "Support form este implementat ca 'error-log' route, nu 'support_tickets' — denumire diferită față de spec dar funcțional echivalent",
     "expiry.ts face auto-call next DOAR dacă restaurantul e în status FULL — comportament corect, previne chemări nedorite când lista e oprită",
-    "walk-in entries (phoneE164='+00000000000') sunt excluse din calculul avg wait — important de testat ca regression"
+    "walk-in entries (phoneE164='+00000000000') sunt excluse din calculul avg wait — important de testat ca regression",
+    "call-again verifică callAgainCount >= maxCallAgain dinamic din settings — logica există dar nu e acoperită de test",
+    "cancelEntry nu are restricție de status spre deosebire de skipEntry — asimetrie potențial periculoasă (cancel SEATED client)",
+    "maxQueueSize=0 blochează instantaneu toți clienții — risc real dacă admin salvează accidental 0, validare min=1 lipsește"
   ]
 }
