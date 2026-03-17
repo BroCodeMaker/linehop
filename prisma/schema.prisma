@@ -20,6 +20,21 @@ model Restaurant {
   entries    WaitlistEntry[]
   errorLogs  ErrorLog[]
   qrTokens   QrToken[]
+  auditLogs  AuditLog[]
+}
+
+model AuditLog {
+  id           String     @id @default(cuid())
+  restaurantId String
+  entryId      String?
+  action       String
+  actorEmail   String?
+  metadata     Json?
+  createdAt    DateTime   @default(now())
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@index([restaurantId, createdAt])
 }
 
 model QrToken {
