@@ -35,7 +35,7 @@ export default function HomePage() {
             LineHop gestionează lista de așteptare prin QR și notificări, astfel încât clienții să revină exact când masa este pregătită.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.875rem" }}>
-            <Link href="/app/login" style={{ display: "inline-flex", alignItems: "center", backgroundColor: "#E87722", color: "#fff", fontWeight: 700, fontSize: "1.05rem", padding: "0.9rem 1.875rem", borderRadius: "1rem", textDecoration: "none", boxShadow: "0 4px 18px rgba(232,119,34,0.4)" }}>
+            <Link href="/demo" style={{ display: "inline-flex", alignItems: "center", backgroundColor: "#E87722", color: "#fff", fontWeight: 700, fontSize: "1.05rem", padding: "0.9rem 1.875rem", borderRadius: "1rem", textDecoration: "none", boxShadow: "0 4px 18px rgba(232,119,34,0.4)" }}>
               Încearcă gratuit 30 zile
             </Link>
             <Link href="/app/login" style={{ display: "inline-flex", alignItems: "center", backgroundColor: "#fff", color: "#374151", fontWeight: 700, fontSize: "1.05rem", padding: "0.9rem 1.875rem", borderRadius: "1rem", border: "2px solid #e5e7eb", textDecoration: "none" }}>
@@ -232,7 +232,7 @@ export default function HomePage() {
           <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 900, color: "#ffffff", marginBottom: "1rem", lineHeight: 1.25 }}>
             Transformă lista de așteptare într-un avantaj.
           </h2>
-          <Link href="/app/login" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: "#ffffff", color: "#E87722", fontWeight: 900, fontSize: "1.125rem", padding: "1.1rem 2.75rem", borderRadius: "1.125rem", textDecoration: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.18)", marginTop: "1.25rem" }}>
+          <Link href="/demo" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: "#ffffff", color: "#E87722", fontWeight: 900, fontSize: "1.125rem", padding: "1.1rem 2.75rem", borderRadius: "1.125rem", textDecoration: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.18)", marginTop: "1.25rem" }}>
             Încearcă LineHop gratuit
           </Link>
         </div>
