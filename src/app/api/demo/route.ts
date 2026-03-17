@@ -5,7 +5,7 @@ const WHATSAPP_PHONE_ID = "996575850212251";
 const MARIUS_PHONE = "40750198891";
 
 async function sendWhatsApp(to: string, body: string) {
-  const token = process.env.WHATSAPP_TOKEN;
+  const token = process.env.WHATSAPP_API_TOKEN;
   if (!token) {
     console.warn("[demo] WHATSAPP_TOKEN not set — skipping WhatsApp send");
     return;
