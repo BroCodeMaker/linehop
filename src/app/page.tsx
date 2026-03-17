@@ -135,7 +135,7 @@ export default function HomePage() {
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
             {[
-              { emoji: "📈", title: "Crește gradul de ocupare", desc: "Mesele libere sunt ocupate mai rapid." },
+              { emoji: "📈", title: "Crește gradul de ocupare", desc: "Fiecare masă liberă este ocupată de grupul potrivit ca mărime — 4 persoane la o masă de 4, nu 2 la una de 6." },
               { emoji: "📋", title: "Listă de așteptare clară și automată", desc: "Fără hârtie și fără confuzii." },
               { emoji: "👩‍💼", title: "Hostessul nu mai gestionează manual", desc: "Se concentrează pe experiența clienților." },
               { emoji: "⏱️", title: "Clienții văd timpul estimat", desc: "Mai puține întrebări la intrare." },
