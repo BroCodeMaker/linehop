@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
+import { APP_VERSION } from "@/lib/version";
 
 type RestaurantInfo = {
   name: string;
@@ -230,6 +231,7 @@ export default function JoinPage() {
         </div>
 
         <p style={s.muted}>{t("join_whatsapp_note")}</p>
+        <p style={{ fontSize: 11, color: "#d1d5db", textAlign: "center", marginTop: 12 }}>v{APP_VERSION}</p>
       </div>
     </div>
   );

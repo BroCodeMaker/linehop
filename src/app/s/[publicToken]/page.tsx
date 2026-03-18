@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
+import { APP_VERSION } from "@/lib/version";
 
 type EntryData = {
   status: string;
@@ -206,6 +207,7 @@ export default function StatusPage() {
         )}
 
         {isActive && <p style={s.refresh}>{t("status_auto_refresh")}</p>}
+        <p style={{ fontSize: 11, color: "#d1d5db", textAlign: "center", marginTop: 8 }}>v{APP_VERSION}</p>
 
         <div style={{ textAlign: "center", padding: "16px", fontSize: 12, color: "#9ca3af", borderTop: "1px solid #f3f4f6", marginTop: 24 }}>
           LineHop™ 2026
