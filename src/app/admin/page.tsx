@@ -33,7 +33,7 @@ export default function SuperAdminDashboard() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/admin/restaurants")
+    fetch("/api/admin/restaurants", { credentials: "include" })
       .then((r) => {
         if (r.status === 401) {
           router.push("/admin/login");
@@ -49,7 +49,7 @@ export default function SuperAdminDashboard() {
   }, [router]);
 
   async function handleLogout() {
-    await fetch("/api/admin/logout", { method: "POST" });
+    await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
     router.push("/admin/login");
   }
 

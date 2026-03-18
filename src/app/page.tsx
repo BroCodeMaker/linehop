@@ -5,8 +5,46 @@ import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { useTranslation } from "@/hooks/useTranslation";
 
 export default function HomePage() {
-  // kept for future i18n expansion; currently using hardcoded RO strings for new sections
-  void useTranslation;
+  const { t } = useTranslation();
+
+  const problemCards = [
+    { emoji: "🗣️", title: t("landing_problem1_title"), desc: t("landing_problem1_desc") },
+    { emoji: "📋", title: t("landing_problem2_title"), desc: t("landing_problem2_desc") },
+    { emoji: "👩‍💼", title: t("landing_problem3_title"), desc: t("landing_problem3_desc") },
+    { emoji: "🪑", title: t("landing_problem4_title"), desc: t("landing_problem4_desc") },
+  ];
+
+  const steps = [
+    { n: "1", title: t("landing_step1_title"), desc: t("landing_step1_desc") },
+    { n: "2", title: t("landing_step2_title"), desc: t("landing_step2_desc") },
+    { n: "3", title: t("landing_step3_title"), desc: t("landing_step3_desc") },
+    { n: "4", title: t("landing_step4_title"), desc: t("landing_step4_desc") },
+  ];
+
+  const benefits = [
+    { emoji: "📈", title: t("landing_benefit1_title"), desc: t("landing_benefit1_desc") },
+    { emoji: "📋", title: t("landing_benefit2_title"), desc: t("landing_benefit2_desc") },
+    { emoji: "👩‍💼", title: t("landing_benefit3_title"), desc: t("landing_benefit3_desc") },
+    { emoji: "⏱️", title: t("landing_benefit4_title"), desc: t("landing_benefit4_desc") },
+    { emoji: "😌", title: t("landing_benefit5_title"), desc: t("landing_benefit5_desc") },
+    { emoji: "🔄", title: t("landing_benefit6_title"), desc: t("landing_benefit6_desc") },
+  ];
+
+  const stats = [
+    { emoji: "📊", label: t("landing_stat1_label") },
+    { emoji: "⏰", label: t("landing_stat2_label") },
+    { emoji: "👥", label: t("landing_stat3_label") },
+    { emoji: "❌", label: t("landing_stat4_label") },
+  ];
+
+  const forItems = [
+    { emoji: "🍽️", label: t("landing_for1_label") },
+    { emoji: "☕", label: t("landing_for2_label") },
+    { emoji: "🌮", label: t("landing_for3_label") },
+    { emoji: "☀️", label: t("landing_for4_label") },
+    { emoji: "🚫", label: t("landing_for5_label") },
+    { emoji: "🪑", label: t("landing_for6_label") },
+  ];
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#ffffff", fontFamily: "'Inter', sans-serif", color: "#111827" }}>
@@ -28,18 +66,18 @@ export default function HomePage() {
       <section style={{ maxWidth: "80rem", margin: "0 auto", padding: "5rem 1.5rem", display: "flex", flexWrap: "wrap", gap: "3rem", alignItems: "center", justifyContent: "center" }}>
         <div style={{ flex: "1 1 400px", maxWidth: "560px" }}>
           <h1 style={{ fontSize: "clamp(2.25rem, 5vw, 3.5rem)", fontWeight: 900, color: "#111827", lineHeight: 1.15, letterSpacing: "-0.03em", marginBottom: "1.25rem" }}>
-            Clienții nu mai pleacă.{" "}
-            <span style={{ color: "#E87722" }}>Masa îi cheamă înapoi.</span>
+            {t("landing_hero_main1")}{" "}
+            <span style={{ color: "#E87722" }}>{t("landing_hero_main2")}</span>
           </h1>
           <p style={{ fontSize: "1.15rem", color: "#6b7280", lineHeight: 1.7, marginBottom: "2rem" }}>
-            LineHop gestionează lista de așteptare prin QR și notificări, astfel încât clienții să revină exact când masa este pregătită.
+            {t("landing_hero_subtitle")}
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.875rem" }}>
             <Link href="/demo" style={{ display: "inline-flex", alignItems: "center", backgroundColor: "#E87722", color: "#fff", fontWeight: 700, fontSize: "1.05rem", padding: "0.9rem 1.875rem", borderRadius: "1rem", textDecoration: "none", boxShadow: "0 4px 18px rgba(232,119,34,0.4)" }}>
-              Încearcă gratuit 30 zile
+              {t("landing_try_free_30")}
             </Link>
             <Link href="/app/login" style={{ display: "inline-flex", alignItems: "center", backgroundColor: "#fff", color: "#374151", fontWeight: 700, fontSize: "1.05rem", padding: "0.9rem 1.875rem", borderRadius: "1rem", border: "2px solid #e5e7eb", textDecoration: "none" }}>
-              Intră în dashboard
+              {t("landing_enter_dashboard")}
             </Link>
           </div>
         </div>
@@ -55,18 +93,18 @@ export default function HomePage() {
               <div style={{ padding: "1.5rem 1.25rem", display: "flex", flexDirection: "column", gap: "0.875rem", textAlign: "center" }}>
                 <div style={{ display: "flex", gap: "0.75rem" }}>
                   <div style={{ flex: 1, background: "#fff8f2", borderRadius: "0.875rem", padding: "0.875rem" }}>
-                    <p style={{ fontSize: "0.65rem", color: "#9ca3af", margin: "0 0 0.2rem" }}>Poziția în listă</p>
+                    <p style={{ fontSize: "0.65rem", color: "#9ca3af", margin: "0 0 0.2rem" }}>{t("landing_step2_label")}</p>
                     <p style={{ fontSize: "2.25rem", fontWeight: 900, color: "#E87722", margin: 0, lineHeight: 1 }}>3</p>
                   </div>
                   <div style={{ flex: 1, background: "#f9fafb", borderRadius: "0.875rem", padding: "0.875rem" }}>
-                    <p style={{ fontSize: "0.65rem", color: "#9ca3af", margin: "0 0 0.2rem" }}>Timp estimat</p>
+                    <p style={{ fontSize: "0.65rem", color: "#9ca3af", margin: "0 0 0.2rem" }}>{t("join_estimated_wait")}</p>
                     <p style={{ fontSize: "1.1rem", fontWeight: 800, color: "#111827", margin: 0 }}>12 min</p>
                   </div>
                 </div>
                 <div style={{ background: "#f0fdf4", borderRadius: "0.875rem", padding: "0.75rem", border: "1.5px solid #bbf7d0" }}>
-                  <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "#166534", margin: 0 }}>✅ Masa ta este pregătită!</p>
+                  <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "#166534", margin: 0 }}>✅ {t("status_badge_CALLED")}</p>
                 </div>
-                <p style={{ fontSize: "0.7rem", color: "#9ca3af", margin: 0 }}>📱 Notificare WhatsApp trimisă</p>
+                <p style={{ fontSize: "0.7rem", color: "#9ca3af", margin: 0 }}>📱 {t("status_whatsapp_sent")}</p>
               </div>
             </div>
           </div>
@@ -77,18 +115,13 @@ export default function HomePage() {
       <section style={{ backgroundColor: "#fafafa", padding: "5rem 1.5rem" }}>
         <div style={{ maxWidth: "72rem", margin: "0 auto" }}>
           <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 900, textAlign: "center", color: "#111827", marginBottom: "0.75rem" }}>
-            Problema restaurantelor aglomerate
+            {t("landing_problem_title")}
           </h2>
           <p style={{ textAlign: "center", color: "#6b7280", fontSize: "1.1rem", marginBottom: "3rem" }}>
-            Fiecare seară aglomerată aduce aceleași probleme.
+            {t("landing_problem_sub")}
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem" }}>
-            {[
-              { emoji: "🗣️", title: "Clienții nu știu cât au de așteptat", desc: "Întreabă constant la intrare sau pleacă la alt restaurant." },
-              { emoji: "📋", title: "Lista pe hârtie creează confuzii", desc: "Numele se repetă sau grupurile sunt uitate." },
-              { emoji: "👩‍💼", title: "Hostessul pierde timp gestionând coada", desc: "În loc să întâmpine clienții, administrează liste." },
-              { emoji: "🪑", title: "Mesele rămân goale câteva minute", desc: "Grupurile nu sunt pregătite când masa devine liberă." },
-            ].map((item, i) => (
+            {problemCards.map((item, i) => (
               <div key={i} style={{ backgroundColor: "#fff", borderRadius: "1.25rem", padding: "1.75rem", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", border: "1px solid #f3f4f6" }}>
                 <div style={{ fontSize: "2rem", marginBottom: "0.875rem" }}>{item.emoji}</div>
                 <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#111827", marginBottom: "0.5rem", lineHeight: 1.4 }}>{item.title}</h3>
@@ -97,7 +130,7 @@ export default function HomePage() {
             ))}
           </div>
           <p style={{ textAlign: "center", color: "#ef4444", fontWeight: 700, fontSize: "1.05rem", marginTop: "2.5rem" }}>
-            Restaurantele pierd timp, clienți și mese.
+            {t("landing_problem_footer")}
           </p>
         </div>
       </section>
@@ -106,15 +139,10 @@ export default function HomePage() {
       <section style={{ padding: "5rem 1.5rem" }}>
         <div style={{ maxWidth: "72rem", margin: "0 auto" }}>
           <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 900, textAlign: "center", color: "#111827", marginBottom: "3.5rem" }}>
-            Cum funcționează
+            {t("landing_how_title")}
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "2.5rem" }}>
-            {[
-              { n: "1", title: "Clientul scanează QR-ul", desc: "Se înscrie în lista de așteptare." },
-              { n: "2", title: "Introduce numărul de persoane", desc: "Primește poziția în listă." },
-              { n: "3", title: "Primește notificare", desc: "Când masa este pregătită." },
-              { n: "4", title: "Confirmă și vine la masă", desc: "Fără haos la intrare." },
-            ].map((step, i) => (
+            {steps.map((step, i) => (
               <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "1rem" }}>
                 <div style={{ width: "4.5rem", height: "4.5rem", backgroundColor: "#fff8f2", border: "3px solid #E87722", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <span style={{ fontSize: "1.875rem", fontWeight: 900, color: "#E87722", lineHeight: 1 }}>{step.n}</span>
@@ -131,17 +159,10 @@ export default function HomePage() {
       <section style={{ backgroundColor: "#fafafa", padding: "5rem 1.5rem" }}>
         <div style={{ maxWidth: "72rem", margin: "0 auto" }}>
           <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 900, textAlign: "center", color: "#111827", marginBottom: "3rem" }}>
-            Beneficii pentru restaurant
+            {t("landing_benefits_title")}
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
-            {[
-              { emoji: "📈", title: "Crește gradul de ocupare", desc: "Fiecare masă liberă este ocupată de grupul potrivit ca mărime — 4 persoane la o masă de 4, nu 2 la una de 6." },
-              { emoji: "📋", title: "Listă de așteptare clară și automată", desc: "Fără hârtie și fără confuzii." },
-              { emoji: "👩‍💼", title: "Hostessul nu mai gestionează manual", desc: "Se concentrează pe experiența clienților." },
-              { emoji: "⏱️", title: "Clienții văd timpul estimat", desc: "Mai puține întrebări la intrare." },
-              { emoji: "😌", title: "Flux calm la intrare", desc: "Clienții așteaptă relaxați." },
-              { emoji: "🔄", title: "Mai multă rotație a meselor", desc: "Încă 1–2 grupuri în plus într-o seară aglomerată." },
-            ].map((item, i) => (
+            {benefits.map((item, i) => (
               <div key={i} style={{ backgroundColor: "#fff", borderRadius: "1.25rem", padding: "1.75rem", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", border: "1px solid #f3f4f6", display: "flex", alignItems: "flex-start", gap: "1rem" }}>
                 <span style={{ fontSize: "1.875rem", flexShrink: 0, marginTop: "0.125rem" }}>{item.emoji}</span>
                 <div>
@@ -158,18 +179,13 @@ export default function HomePage() {
       <section style={{ padding: "5rem 1.5rem" }}>
         <div style={{ maxWidth: "72rem", margin: "0 auto" }}>
           <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 900, textAlign: "center", color: "#111827", marginBottom: "1rem" }}>
-            Statistici în timp real
+            {t("landing_stats_title")}
           </h2>
           <p style={{ textAlign: "center", color: "#6b7280", fontSize: "1.05rem", marginBottom: "3rem" }}>
-            Vezi când este restaurantul cel mai aglomerat și cum evoluează cozile.
+            {t("landing_stats_sub")}
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1.5rem" }}>
-            {[
-              { emoji: "📊", label: "Timp mediu de așteptare" },
-              { emoji: "⏰", label: "Orele de vârf" },
-              { emoji: "👥", label: "Dimensiunea grupurilor" },
-              { emoji: "❌", label: "Rata de no-show" },
-            ].map((item, i) => (
+            {stats.map((item, i) => (
               <div key={i} style={{ backgroundColor: "#fff", borderRadius: "1.25rem", padding: "2rem", textAlign: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", border: "1px solid #f3f4f6" }}>
                 <div style={{ fontSize: "2.5rem", marginBottom: "0.875rem" }}>{item.emoji}</div>
                 <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "#374151", margin: 0 }}>{item.label}</p>
@@ -183,20 +199,20 @@ export default function HomePage() {
       <section style={{ backgroundColor: "#fff8f2", padding: "5rem 1.5rem" }}>
         <div style={{ maxWidth: "48rem", margin: "0 auto", textAlign: "center" }}>
           <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 900, color: "#111827", marginBottom: "2rem" }}>
-            Cât valorează o rotație de masă în plus?
+            {t("landing_calc_title")}
           </h2>
           <div style={{ backgroundColor: "#fff", borderRadius: "1.5rem", padding: "2.5rem", boxShadow: "0 4px 24px rgba(232,119,34,0.12)", border: "2px solid #fed7aa" }}>
             <p style={{ fontSize: "1.1rem", color: "#374151", lineHeight: 1.7, marginBottom: "1.25rem" }}>
-              10 mese × 1 rotație suplimentară × 120 lei =
+              {t("landing_calc_formula")}
             </p>
             <div style={{ fontSize: "clamp(3rem, 8vw, 4.5rem)", fontWeight: 900, color: "#E87722", lineHeight: 1, marginBottom: "0.75rem" }}>
-              ≈ 1.200 lei
+              {t("landing_calc_amount")}
             </div>
             <p style={{ fontSize: "1rem", color: "#374151", fontWeight: 600, marginBottom: "0.75rem" }}>
-              venit suplimentar într-o seară aglomerată
+              {t("landing_calc_income")}
             </p>
             <p style={{ fontSize: "0.8rem", color: "#9ca3af", margin: 0 }}>
-              Rezultatele variază în funcție de tipul restaurantului.
+              {t("landing_calc_note")}
             </p>
           </div>
         </div>
@@ -206,17 +222,10 @@ export default function HomePage() {
       <section style={{ padding: "5rem 1.5rem" }}>
         <div style={{ maxWidth: "72rem", margin: "0 auto" }}>
           <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.25rem)", fontWeight: 900, textAlign: "center", color: "#111827", marginBottom: "3rem" }}>
-            Potrivit pentru
+            {t("landing_for_title")}
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem" }}>
-            {[
-              { emoji: "🍽️", label: "Restaurante centrale" },
-              { emoji: "☕", label: "Brunch" },
-              { emoji: "🌮", label: "Street food" },
-              { emoji: "☀️", label: "Terase aglomerate" },
-              { emoji: "🚫", label: "Fără rezervări" },
-              { emoji: "🪑", label: "Mese puține" },
-            ].map((item, i) => (
+            {forItems.map((item, i) => (
               <div key={i} style={{ backgroundColor: "#fff", borderRadius: "1.25rem", padding: "1.5rem 1rem", textAlign: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.05)", border: "1px solid #f3f4f6" }}>
                 <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>{item.emoji}</div>
                 <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "#374151", margin: 0 }}>{item.label}</p>
@@ -230,17 +239,20 @@ export default function HomePage() {
       <section style={{ background: "linear-gradient(135deg, #E87722, #d96a18)", padding: "5rem 1.5rem" }}>
         <div style={{ maxWidth: "40rem", margin: "0 auto", textAlign: "center" }}>
           <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 900, color: "#ffffff", marginBottom: "1rem", lineHeight: 1.25 }}>
-            Transformă lista de așteptare într-un avantaj.
+            {t("landing_final_cta")}
           </h2>
           <Link href="/demo" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", backgroundColor: "#ffffff", color: "#E87722", fontWeight: 900, fontSize: "1.125rem", padding: "1.1rem 2.75rem", borderRadius: "1.125rem", textDecoration: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.18)", marginTop: "1.25rem" }}>
-            Încearcă LineHop gratuit
+            {t("landing_try_linehop_free")}
           </Link>
         </div>
       </section>
 
       {/* FOOTER */}
       <footer style={{ borderTop: "1px solid #f3f4f6", padding: "1.5rem", textAlign: "center", color: "#9ca3af", fontSize: "0.875rem" }}>
-        © 2026 LineHop · contact@linehop.ro
+        {t("landing_footer_text")} ·{" "}
+        <Link href="/politica-confidentialitate" style={{ color: "#9ca3af", textDecoration: "underline" }}>{t("landing_footer_privacy")}</Link>
+        {" · "}
+        <Link href="/termeni" style={{ color: "#9ca3af", textDecoration: "underline" }}>{t("landing_footer_terms")}</Link>
       </footer>
     </div>
   );

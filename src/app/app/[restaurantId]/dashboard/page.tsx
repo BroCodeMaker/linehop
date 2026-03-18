@@ -636,6 +636,29 @@ export default function DashboardPage() {
   // Suppress unused warning
   void handleLogout;
 
+  // BUG #6: Auto-expire CALLED entries whose confirmDeadlineAt has passed
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const now = Date.now();
+      const expiredCalled = entries.filter(
+        (e) =>
+          e.status === "CALLED" &&
+          e.confirmDeadlineAt &&
+          new Date(e.confirmDeadlineAt).getTime() < now
+      );
+      for (const entry of expiredCalled) {
+        await fetch(
+          `/api/restaurants/${restaurantId}/entries/${entry.id}/no-show`,
+          { method: "POST", credentials: "include" }
+        ).catch(() => {});
+      }
+      if (expiredCalled.length > 0) {
+        fetchQueue();
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [entries, restaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: FOOD_BG, fontFamily: "system-ui, sans-serif" }}>
       <style>{`

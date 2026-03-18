@@ -210,6 +210,9 @@ export default function JoinPage() {
           <button type="submit" style={s.btn} disabled={submitting}>
             {submitting ? t("join_submitting") : `${t("join_submit")} →`}
           </button>
+          <p style={{ fontSize: "12px", color: "#9ca3af", textAlign: "center", margin: "10px 0 0" }}>
+            🔒 Numărul tău este folosit DOAR pentru această notificare.
+          </p>
         </form>
 
         {/* Trust indicators */}

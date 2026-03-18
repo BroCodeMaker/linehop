@@ -21,7 +21,7 @@ function PrintContent() {
     if (ids.length === 0) { setLoading(false); return; }
 
     async function load() {
-      const res = await fetch("/api/admin/qr-tokens");
+      const res = await fetch("/api/admin/qr-tokens", { credentials: "include" });
       if (!res.ok) { setLoading(false); return; }
       const tokens: { id: string; token: string }[] = await res.json();
       const filtered = tokens.filter((t) => ids.includes(t.id));

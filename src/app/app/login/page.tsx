@@ -37,7 +37,7 @@ export default function LoginPage() {
     <div style={s.page}>
       <div style={s.card}>
         <h1 style={s.title}>🍽️ Staff Login</h1>
-        <p style={s.subtitle}>LineHop Dashboard</p>
+        <p style={s.subtitle}>LineHop — Panoul de control al restaurantului</p>
         <form onSubmit={handleSubmit} style={s.form}>
           <label style={s.label}>Email</label>
           <input
