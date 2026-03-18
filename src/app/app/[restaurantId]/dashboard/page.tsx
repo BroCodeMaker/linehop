@@ -381,6 +381,7 @@ export default function DashboardPage() {
     setMessage(null);
     try {
       const res = await fetch(`/api/restaurants/${restaurantId}/call-next`, { method: "POST", credentials: "include" });
+      if (res.status === 401) { setSessionExpired(true); router.push("/app/login"); return; }
       const data = await res.json();
       if (data.ok && data.entry) {
         logAudit("CALLED", data.entry.id, { guestName: data.entry.guestName, partySize: data.entry.partySize });
@@ -398,6 +399,11 @@ export default function DashboardPage() {
     const prevEntry = entries.find(e => e.id === entryId);
     const res = await fetch(`/api/restaurants/${restaurantId}/entries/${entryId}/${action}`, { method: "POST", credentials: "include" });
     if (!res.ok) {
+      if (res.status === 401) {
+        setSessionExpired(true);
+        router.push("/app/login");
+        return;
+      }
       const d = await res.json().catch(() => ({}));
       setMessage({ text: `❌ ${d.error ?? t("error")}`, type: "info" });
       setTimeout(() => setMessage(null), 3000);

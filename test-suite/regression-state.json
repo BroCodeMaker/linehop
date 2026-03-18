@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2026-03-17T01:00:15.000Z",
+  "lastUpdated": "2026-03-18T01:01:49.000Z",
   "testFramework": "vitest",
   "testFile": "src/__tests__/waitlist.test.ts",
   "regressions": [
@@ -57,6 +57,30 @@
     ]
   },
   "proposedTests": [
+    {
+      "id": "NEW-007",
+      "name": "maxQueueSize=0 blochează chiar și primul client (0 >= 0 = true)",
+      "description": "join/route.ts:57 folosește >= nu >. Dacă adminul setează maxQueueSize=0, primul client e blocat instant (0 >= 0). Validare min=1 lipsește din settings API și din HTML input (min=0). Test: seed restaurant cu maxQueueSize=0, încearcă join → expect 409 queueFull.",
+      "priority": "high",
+      "addedAt": "2026-03-18T01:01:49.000Z",
+      "status": "pending"
+    },
+    {
+      "id": "NEW-008",
+      "name": "cancelEntry pe client SEATED — nu are restricție de status",
+      "description": "cancelEntry() face updateMany fără filtru status, poate cancela orice entry inclusiv SEATED. skipEntry are filtru explicit. Behavior expected trebuie definit: a) blocat, b) permis, c) audit log. Test: seed entry SEATED, apelează cancelEntry → verifică dacă e CANCELED sau dacă primești eroare.",
+      "priority": "medium",
+      "addedAt": "2026-03-18T01:01:49.000Z",
+      "status": "pending"
+    },
+    {
+      "id": "NEW-009",
+      "name": "Dashboard ascunde call-again hardcodat la count<1, ignoră settings.maxCallAgain",
+      "description": "dashboard/page.tsx:1325 folosește (entry.callAgainCount ?? 0) < 1 (hardcodat). Dacă adminul setează maxCallAgain=2, butonul tot dispare după prima rechemare. Bug UI — trebuie citit din settings. Test: maxCallAgain=2, apelează call-again o dată, verifică că butonul e vizibil pentru a 2-a chemare.",
+      "priority": "high",
+      "addedAt": "2026-03-18T01:01:49.000Z",
+      "status": "pending"
+    },
     {
       "id": "NEW-001",
       "name": "Skip a CALLED entry (not just WAITING)",
@@ -123,9 +147,23 @@
       "regressionsPassed": 4,
       "regressionsFailed": 0,
       "newTestsAdded": 3
+    },
+    {
+      "date": "2026-03-18",
+      "passed": 42,
+      "failed": 0,
+      "warnings": 0,
+      "regressionsPassed": 4,
+      "regressionsFailed": 0,
+      "newTestsAdded": 3,
+      "note": "42 tests = 21 main + 21 worktree (agent-a54feb2d). 3 noi teste propuse: NEW-007/008/009."
     }
   ],
   "lessons": [
+    "cancelEntry nu are restricție de status — poate cancela ORICE entry inclusiv SEATED, asimetrie față de skipEntry",
+    "maxQueueSize=0 blochează primul client: join/route.ts folosește >= nu >, deci 0>=0 = TRUE. UI-ul are min=0 în input.",
+    "Dashboard hardcodează callAgainCount < 1 în loc să citească settings.maxCallAgain — bug UI dacă adminul crește limita",
+    "Worktree agent-a54feb2d are propriile teste — vitest le rulează pe ambele, deci vedem 42 în loc de 21",
     "Support form este implementat ca 'error-log' route, nu 'support_tickets' — denumire diferită față de spec dar funcțional echivalent",
     "expiry.ts face auto-call next DOAR dacă restaurantul e în status FULL — comportament corect, previne chemări nedorite când lista e oprită",
     "walk-in entries (phoneE164='+00000000000') sunt excluse din calculul avg wait — important de testat ca regression",

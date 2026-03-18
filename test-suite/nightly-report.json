@@ -1,88 +1,88 @@
 {
-  "date": "2026-03-17",
-  "runAt": "2026-03-17T01:00:15.000Z",
+  "date": "2026-03-18",
+  "runAt": "2026-03-18T01:01:49.000Z",
   "summary": {
-    "passed": 21,
+    "passed": 42,
     "failed": 0,
     "warnings": 0,
-    "regressionsPassed": 4,
-    "regressionsFailed": 0,
-    "newTestsProposed": 3
-  },
-  "jestResults": {
-    "suites": 1,
-    "tests": 21,
-    "passed": 21,
-    "failed": 0,
-    "duration": "482ms",
-    "framework": "vitest"
+    "testFiles": 2,
+    "duration": "876ms",
+    "note": "42 tests = 21 per file × 2 files (main + worktree agent-a54feb2d)"
   },
   "regressions": [
     {
       "id": "REG-001",
       "name": "Skip nu auto-cheamă urmatorul",
       "status": "PASS",
-      "details": "skipEntry() în src/lib/queue.ts face doar updateMany cu status SKIPPED + clearReminderTimer. Niciun callNext() apelat. Ruta /skip/route.ts nu are trigger ulterior."
+      "details": "skip/route.ts apelează doar skipEntry() și emitUpdate(). callNext() nu există în handler. skipEntry() în queue.ts face updateMany cu status IN [WAITING,CALLED,CONFIRMED] fără niciun trigger suplimentar."
     },
     {
       "id": "REG-002",
       "name": "Expired state după timer 0:00",
       "status": "PASS",
-      "details": "expiry.ts face tranziție la NO_SHOW_CONFIRM/NO_SHOW_ARRIVAL. Dashboard-ul are BufferTimer care arată countdown-ul de 10min după expiry. NO_SHOW entries se auto-ascund client-side după 10 minute (line 590-591 dashboard). CallAgain button prezent în expired state."
+      "details": "expiry.ts face tranziție CALLED→NO_SHOW_CONFIRM și CONFIRMED→NO_SHOW_ARRIVAL cu notificare WhatsApp. Nu rămâne stuck la 0:00. Testat și în Jest (test 4)."
     },
     {
       "id": "REG-003",
       "name": "Average >30min revert",
       "status": "PASS",
-      "details": "src/app/api/restaurants/[id]/stats/route.ts: AVG_CAP_MIN=30, dacă avg>30 → revert la manual setting + prisma.errorLog.create() cu subject 'Avg wait time reverted'. Comportament corect."
+      "details": "stats/route.ts: AVG_CAP_MIN=30, dacă avgWaitMinutes > 30 revine la valoarea manuală și loghează în prisma.errorLog.create cu subject='Avg wait time reverted'. Console.warn de backup inclus."
     },
     {
       "id": "REG-004",
-      "name": "Support form / error-log",
+      "name": "Support form (error-log API)",
       "status": "PASS",
-      "details": "src/app/api/restaurants/[id]/error-log/route.ts există. prisma/schema.prisma are model ErrorLog cu relație restaurantId. Schema conține câmpurile subject, description. Ruta funcționează ca support form."
+      "details": "Ruta src/app/api/restaurants/[id]/error-log/route.ts există. schema.prisma: model ErrorLog la linia 112, referenced via restaurant.errorLogs. API-ul funcțional."
     }
   ],
-  "pendingProposedTests": [
+  "proposedTestsChecked": [
     {
-      "id": "NEW-001",
-      "name": "Skip a CALLED entry (not just WAITING)",
-      "status": "pending — neimplementat încă",
-      "priority": "high"
+      "id": "NEW-005",
+      "name": "maxQueueSize=0 blochează toți clienții",
+      "findingUpdate": "Confirmat: join/route.ts: if (currentQueueSize >= maxQueueSize) → dacă maxQueueSize=0 și queue e goală (0 >= 0), primul client e blocat. Nu există validare min=1 în settings. Riscul real confirmat — test rămâne în proposedTests.",
+      "severity": "HIGH"
     },
     {
       "id": "NEW-002",
       "name": "Call-again flow respectă maxCallAgain",
-      "status": "pending — codul există (callAgainCount >= settings.maxCallAgain în call-again/route.ts:41), dar testul nu e scris",
-      "priority": "high"
+      "findingUpdate": "Confirmat în call-again/route.ts:41: if (entry.callAgainCount >= settings.maxCallAgain). Logica există și e dinamică (din settings, nu hardcodat). Dashboard ascunde butonul dacă callAgainCount >= 1 (linia 1325). Test lipsă — rămâne în proposedTests.",
+      "severity": "HIGH"
     },
     {
-      "id": "NEW-003",
-      "name": "Walk-in entry exclus din avg wait",
-      "status": "pending — codul există (phoneE164: { not: '+00000000000' } în stats/route.ts:27), dar testul nu e scris",
-      "priority": "medium"
+      "id": "NEW-004",
+      "name": "cancelEntry nu are restricție de status",
+      "findingUpdate": "Confirmat: cancelEntry() face updateMany fără filtru pe status — poate cancela orice entry indiferent de stare (inclusiv SEATED). skipEntry are filtru explicit. Asimetria persistă și e un edge case real.",
+      "severity": "MEDIUM"
     }
   ],
   "newTestsAdded": [
     {
-      "id": "NEW-004",
-      "name": "cancelEntry acceptă orice status (inclusiv SEATED/SKIPPED)",
-      "reason": "skipEntry restricționează la WAITING/CALLED/CONFIRMED, dar cancelEntry nu verifică statusul. Edge case: cancel pe un client SEATED ar trebui să fie invalid (sau explicit permis). Comportamentul trebuie documentat și testat."
+      "id": "NEW-007",
+      "name": "maxQueueSize=0 blochează chiar și primul client (currentQueueSize=0 >= maxQueueSize=0)",
+      "reason": "Verificare manuală join/route.ts confirmă că 0>=0 este TRUE — primul client e blocat dacă admin setează accidental 0. Validare min=1 lipsește din settings API și UI (min=0 în input HTML).",
+      "priority": "HIGH",
+      "location": "src/app/api/public/restaurants/[slug]/join/route.ts:57, src/app/api/restaurants/[id]/settings/route.ts"
     },
     {
-      "id": "NEW-005",
-      "name": "maxQueueSize=0 — tratat ca unlimited sau blochează totul?",
-      "reason": "isQueueFull() returnează true dacă activeCount >= maxQueueSize. Dacă maxQueueSize=0, toți clienții sunt blocați din prima. E un edge case real dacă un admin setează accidental 0. Trebuie testat comportamentul și adăugată validare min=1."
+      "id": "NEW-008",
+      "name": "cancelEntry pe client SEATED — comportament nedefinit",
+      "reason": "cancelEntry() nu filtrează pe status, deci poate cancela și intrări SEATED (sau orice alt status). skipEntry are filtru explicit. Comportamentul expected trebuie definit și testat.",
+      "priority": "MEDIUM",
+      "location": "src/lib/queue.ts:148 — cancelEntry lipsit de filtru status"
     },
     {
-      "id": "NEW-006",
-      "name": "getQueue returnează count corect după tranziții multiple de status",
-      "reason": "Un client trece prin WAITING→CALLED→NO_SHOW_CONFIRM. getQueue trebuie să nu-l mai numere ca activ. Testul verifică că activeCount scade corect la fiecare tranziție, nu rămâne inflatat."
+      "id": "NEW-009",
+      "name": "Dashboard ascunde call-again hardcodat la count<1 indiferent de settings.maxCallAgain",
+      "reason": "dashboard/page.tsx linia 1325: (entry.callAgainCount ?? 0) < 1 — valoarea 1 e hardcodată în UI, nu citită din settings.maxCallAgain. Dacă adminul setează maxCallAgain=2, butonul tot dispare după prima rechemare.",
+      "priority": "HIGH",
+      "location": "src/app/app/[restaurantId]/dashboard/page.tsx:1325"
     }
   ],
   "lessons": [
-    "call-again route verifică callAgainCount >= maxCallAgain dinamic din settings, nu hardcodat — bine, dar netestată această logică",
-    "NO_SHOW entries se auto-ascund client-side după 10 minute (nu server-side delete) — important pentru UX dar nu acoperit de unit tests",
-    "cancelEntry nu are restricție de status — spre deosebire de skipEntry care e restrictiv. Asimetrie care merită testată."
+    "cancelEntry nu are restricție de status (orice stare poate fi cancelată) — asimetrie față de skipEntry care restricționează la WAITING/CALLED/CONFIRMED",
+    "maxQueueSize=0 blochează instantaneu toți clienții — join/route.ts:57 folosește >=, nu >",
+    "Dashboard hardcodează callAgainCount < 1 în loc să citească settings.maxCallAgain — dacă adminul crește limita la 2, UI-ul nu reflectă schimbarea",
+    "Rularea pe 2 fișiere test (main + worktree) produce 42 teste în loc de 21 — worktree-ul agent-a54feb2d trebuie curățat sau exclus din vitest config",
+    "Toate 4 regresii cunoscute sunt PASS — codul e stabil pe fixurile de bază"
   ]
 }
