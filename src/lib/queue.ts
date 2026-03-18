@@ -145,10 +145,12 @@ export async function skipEntry(restaurantId: string, entryId: string) {
 }
 
 // ─── Cancel ───────────────────────────────────────────────────────────────────
+// Only cancelable from active states — SEATED, SKIPPED, CANCELED entries are excluded.
+const CANCELABLE_STATUSES = ['WAITING', 'CALLED', 'CONFIRMED'] as const
 export async function cancelEntry(restaurantId: string, entryId: string) {
   clearReminderTimer(entryId)
   return prisma.waitlistEntry.updateMany({
-    where: { id: entryId, restaurantId },
+    where: { id: entryId, restaurantId, status: { in: [...CANCELABLE_STATUSES] } },
     data: { status: 'CANCELED', canceledAt: new Date() },
   })
 }

@@ -31,9 +31,12 @@ export async function PUT(
 
   const body = await request.json();
 
-  // Validate maxQueueSize — cap at 50
+  // Validate maxQueueSize — must be between 1 and 50
   if (body.maxQueueSize !== undefined) {
     const val = Number(body.maxQueueSize);
+    if (val < 1) {
+      return NextResponse.json({ error: "maxQueueSize must be at least 1" }, { status: 400 });
+    }
     if (val > 50) {
       return NextResponse.json({ error: "maxQueueSize cannot exceed 50" }, { status: 400 });
     }

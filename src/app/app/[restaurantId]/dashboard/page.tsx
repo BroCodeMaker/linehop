@@ -180,6 +180,7 @@ export default function DashboardPage() {
   const [restStatus, setRestStatus] = useState<RestStatus | null>(null);
   const [listClosed, setListClosed] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [maxCallAgain, setMaxCallAgain] = useState<number>(1);
   const [callingNext, setCallingNext] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "ok" | "info" } | null>(null);
   const [changingStatus, setChangingStatus] = useState(false);
@@ -251,6 +252,18 @@ export default function DashboardPage() {
     } catch { /* ignore */ }
   }, [restaurantId, router]);
 
+  const fetchSettings = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/restaurants/${restaurantId}/settings`, { credentials: "include" });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.ok && d.settings?.maxCallAgain != null) {
+          setMaxCallAgain(d.settings.maxCallAgain);
+        }
+      }
+    } catch { /* ignore */ }
+  }, [restaurantId]);
+
   const refreshAll = useCallback(() => {
     fetchQueue();
     fetchRestStatus();
@@ -295,7 +308,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     refreshAll();
-  }, [refreshAll]);
+    fetchSettings();
+  }, [refreshAll, fetchSettings]);
 
   // Detect mobile
   useEffect(() => {
@@ -1073,6 +1087,7 @@ export default function DashboardPage() {
                     editingId={editingId}
                     editForm={editForm}
                     editSubmitting={editSubmitting}
+                    maxCallAgain={maxCallAgain}
                     onAction={handleAction}
                     onSeat={handleSeatClick}
                     onUndo={handleUndo}
@@ -1103,6 +1118,7 @@ export default function DashboardPage() {
                       editingId={editingId}
                       editForm={editForm}
                       editSubmitting={editSubmitting}
+                      maxCallAgain={maxCallAgain}
                       onAction={handleAction}
                       onSeat={handleSeatClick}
                       onUndo={handleUndo}
@@ -1131,6 +1147,7 @@ export default function DashboardPage() {
                       editingId={editingId}
                       editForm={editForm}
                       editSubmitting={editSubmitting}
+                      maxCallAgain={maxCallAgain}
                       onAction={handleAction}
                       onSeat={handleSeatClick}
                       onUndo={handleUndo}
@@ -1184,6 +1201,7 @@ type EntryRowProps = {
   editingId: string | null;
   editForm: { guestName: string; partySize: number; phoneE164: string };
   editSubmitting: boolean;
+  maxCallAgain: number;
   onAction: (id: string, action: string) => void;
   onSeat: (entry: Entry) => void;
   onUndo: (id: string, action: "undo-seated" | "undo-skipped" | "re-call") => void;
@@ -1193,7 +1211,7 @@ type EntryRowProps = {
   onEditCancel: () => void;
 };
 
-function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction, onSeat, onUndo, onStartEdit, onEditChange, onEditSave, onEditCancel }: EntryRowProps) {
+function EntryRow({ entry, index, editingId, editForm, editSubmitting, maxCallAgain, onAction, onSeat, onUndo, onStartEdit, onEditChange, onEditSave, onEditCancel }: EntryRowProps) {
   const { t } = useTranslation();
   const now = Date.now();
   const isLongWait = entry.status === "WAITING" && now - new Date(entry.createdAt).getTime() > 30 * 60 * 1000;
@@ -1322,7 +1340,7 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, onAction,
             <button onClick={() => onAction(entry.id, "skip")} style={{ ...s.actionBtn, background: "#9ca3af" }}>{t("skip_action")}</button>
           </>
         )}
-        {["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(entry.status) && (entry.callAgainCount ?? 0) < 1 && (
+        {["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(entry.status) && (entry.callAgainCount ?? 0) < maxCallAgain && (
           <button onClick={() => onAction(entry.id, "call-again")} style={{ ...s.actionBtn, background: "#7c3aed" }}>
             {t("call_again_action")}
           </button>

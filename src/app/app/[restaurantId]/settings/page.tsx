@@ -82,8 +82,11 @@ export default function SettingsPage() {
 
   function setNum(field: keyof Settings, val: string) {
     let num = Number(val);
-    // Cap maxQueueSize at 50
-    if (field === "maxQueueSize" && num > 50) num = 50;
+    // Clamp maxQueueSize between 1 and 50
+    if (field === "maxQueueSize") {
+      if (num < 1) num = 1;
+      if (num > 50) num = 50;
+    }
     setForm(f => ({ ...f, [field]: num }));
   }
 
@@ -133,7 +136,7 @@ export default function SettingsPage() {
                 <div style={s.field}>
                   <label style={s.label}>{t("settings_max_queue")}</label>
                   <p style={s.hint}>{t("settings_max_queue_hint")}</p>
-                  <input type="number" min={5} max={50} value={form.maxQueueSize} onChange={e => setNum("maxQueueSize", e.target.value)} style={s.input} required />
+                  <input type="number" min={1} max={50} value={form.maxQueueSize} onChange={e => setNum("maxQueueSize", e.target.value)} style={s.input} required />
                 </div>
               </div>
             </div>
