@@ -656,23 +656,34 @@ export default function DashboardPage() {
   // Suppress unused warning
   void handleLogout;
 
-  // BUG #6: Auto-expire CALLED entries whose confirmDeadlineAt has passed
+  // Auto-expire CALLED entries (confirmDeadlineAt passed) and CONFIRMED entries (arrivalDeadlineAt passed)
   useEffect(() => {
     const interval = setInterval(async () => {
       const now = Date.now();
+
       const expiredCalled = entries.filter(
         (e) =>
           e.status === "CALLED" &&
           e.confirmDeadlineAt &&
           new Date(e.confirmDeadlineAt).getTime() < now
       );
-      for (const entry of expiredCalled) {
+
+      const expiredConfirmed = entries.filter(
+        (e) =>
+          e.status === "CONFIRMED" &&
+          e.arrivalDeadlineAt &&
+          new Date(e.arrivalDeadlineAt).getTime() < now
+      );
+
+      const toExpire = [...expiredCalled, ...expiredConfirmed];
+
+      for (const entry of toExpire) {
         await fetch(
           `/api/restaurants/${restaurantId}/entries/${entry.id}/no-show`,
           { method: "POST", credentials: "include" }
         ).catch(() => {});
       }
-      if (expiredCalled.length > 0) {
+      if (toExpire.length > 0) {
         fetchQueue();
       }
     }, 30000);
