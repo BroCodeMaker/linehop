@@ -128,7 +128,7 @@ function BufferTimer({ expiredAt }: { expiredAt: string }) {
   const [secs, setSecs] = useState(0);
   const { t } = useTranslation();
   useEffect(() => {
-    const expiry = new Date(expiredAt).getTime() + 10 * 60 * 1000;
+    const expiry = new Date(expiredAt).getTime() + 30 * 60 * 1000;
     const update = () => setSecs(Math.max(0, Math.floor((expiry - Date.now()) / 1000)));
     update();
     const timer = setInterval(update, 1000);
@@ -636,11 +636,11 @@ export default function DashboardPage() {
   });
   const expiredEntries = entries.filter(e => {
     if (!["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status) && !isLocallyExpiredFn(e)) return false;
-    // Auto-hide NO_SHOW entries after 10 minutes (client-side filter, no DB delete)
+    // Auto-hide NO_SHOW entries after 30 minutes (client-side filter, no DB delete)
     if (["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status)) {
       const refTime = e.expiredAt || e.createdAt;
       const minutesSince = (Date.now() - new Date(refTime).getTime()) / 60000;
-      if (minutesSince > 10) return false;
+      if (minutesSince > 30) return false;
     }
     return true;
   });
