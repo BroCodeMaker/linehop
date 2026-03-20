@@ -145,3 +145,66 @@ model DemoRequest {
   createdAt      DateTime  @default(now())
   contactedAt    DateTime?
 }
+
+// ─── LineHop Ticket — generic queue system ────────────────────────────────────
+
+model TicketQueue {
+  id           String               @id @default(uuid())
+  name         String
+  slug         String               @unique
+  businessType String               @default("generic")
+  status       String               @default("OPEN")
+  timezone     String               @default("Europe/Bucharest")
+  ownerId      String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  tickets      Ticket[]
+  settings     TicketQueueSettings?
+}
+
+model TicketQueueSettings {
+  id                String      @id @default(uuid())
+  queueId           String      @unique
+  queue             TicketQueue @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  noShowTimerSec    Int         @default(180)
+  dailyReset        Boolean     @default(true)
+  msgWhatsappCall   String      @default("Este rândul dvs.! Numărul {number}. Vă rugăm să vă prezentați.")
+  msgWhatsappNoShow String      @default("Numărul dvs. {number} a expirat. Ne pare rău.")
+  msgWhatsappClosed String      @default("Coada s-a închis. Numărul dvs. {number} a fost anulat.")
+}
+
+model Ticket {
+  id               String               @id @default(uuid())
+  queueId          String
+  queue            TicketQueue          @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  number           Int
+  publicToken      String               @unique @default(uuid())
+  phoneE164        String?
+  guestName        String?
+  status           String               @default("WAITING")
+  issuedAt         DateTime             @default(now())
+  calledAt         DateTime?
+  doneAt           DateTime?
+  noShowAt         DateTime?
+  canceledAt       DateTime?
+  noShowDeadlineAt DateTime?
+  metadata         Json?
+  messageEvents    TicketMessageEvent[]
+
+  @@index([queueId, status, issuedAt])
+}
+
+model TicketMessageEvent {
+  id         String   @id @default(uuid())
+  ticketId   String
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  direction  String   @default("outbound")
+  provider   String
+  phoneE164  String
+  body       String
+  status     String
+  externalId String?
+  createdAt  DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+}
