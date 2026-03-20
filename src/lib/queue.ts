@@ -156,15 +156,64 @@ export async function cancelEntry(restaurantId: string, entryId: string) {
 }
 
 // ─── Close restaurant ─────────────────────────────────────────────────────────
+// NEW-011 fix: notify all active guests via WhatsApp before canceling
+// NEW-012 fix: write server-side auditLog for each canceled entry
 export async function closeRestaurant(restaurantId: string) {
+  const { sendWhatsAppMessage } = await import('./notify')
+
+  // 1. Fetch all active entries BEFORE canceling so we can notify them
+  const activeEntries = await prisma.waitlistEntry.findMany({
+    where: { restaurantId, status: { in: ['WAITING', 'CALLED', 'CONFIRMED'] } },
+    select: { id: true, phoneE164: true, guestName: true, publicToken: true },
+  })
+
+  // 2. Close the restaurant
   await prisma.restaurant.update({
     where: { id: restaurantId },
     data: { status: 'CLOSED' },
   })
-  return prisma.waitlistEntry.updateMany({
+
+  // 3. Cancel all active entries
+  const canceledAt = new Date()
+  await prisma.waitlistEntry.updateMany({
     where: { restaurantId, status: { in: ['WAITING', 'CALLED', 'CONFIRMED'] } },
-    data: { status: 'CANCELED', canceledAt: new Date() },
+    data: { status: 'CANCELED', canceledAt },
   })
+
+  // 4. Notify each guest + write auditLog (best-effort, non-blocking)
+  await Promise.allSettled(
+    activeEntries.map(async (entry) => {
+      // NEW-011: send WhatsApp notification
+      await sendWhatsAppMessage(
+        entry.id,
+        entry.phoneE164,
+        `Ne pare rău, ${entry.guestName ?? 'stimate client'}! Restaurantul s-a închis și rezervarea dvs. a fost anulată. Vă mulțumim pentru înțelegere.`
+      ).catch((err) => console.error(`[closeRestaurant] notify failed for ${entry.id}:`, err))
+
+      // NEW-012: server-side auditLog entry for each cancelation
+      await prisma.auditLog.create({
+        data: {
+          restaurantId,
+          entryId: entry.id,
+          action: 'RESTAURANT_CLOSED_CANCEL',
+          actorEmail: 'system',
+          metadata: { reason: 'restaurant_closed', canceledAt: canceledAt.toISOString() },
+        },
+      }).catch((err) => console.error(`[closeRestaurant] auditLog failed for ${entry.id}:`, err))
+    })
+  )
+
+  // 5. AuditLog for the close event itself
+  await prisma.auditLog.create({
+    data: {
+      restaurantId,
+      action: 'RESTAURANT_CLOSED',
+      actorEmail: 'system',
+      metadata: { canceledCount: activeEntries.length, closedAt: canceledAt.toISOString() },
+    },
+  }).catch((err) => console.error('[closeRestaurant] close auditLog failed:', err))
+
+  return { canceledCount: activeEntries.length }
 }
 
 // ─── Confirm (atomic) ─────────────────────────────────────────────────────────
