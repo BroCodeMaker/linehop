@@ -43,6 +43,7 @@ export async function expireEntries(): Promise<number> {
   }
 
   for (const entry of calledExpiring) {
+    if (!entry.phoneE164 || entry.phoneE164 === '+00000000000') continue
     const settings = await getSettings(entry.restaurantId)
     const name = entry.guestName ?? 'Stimate client'
     const msg = settings.msgWhatsappExpire.replace('{name}', name)
@@ -51,6 +52,7 @@ export async function expireEntries(): Promise<number> {
   }
 
   for (const entry of confirmedExpiring) {
+    if (!entry.phoneE164 || entry.phoneE164 === '+00000000000') continue
     const settings = await getSettings(entry.restaurantId)
     const name = entry.guestName ?? 'Stimate client'
     const msg = settings.msgWhatsappExpire.replace('{name}', name)

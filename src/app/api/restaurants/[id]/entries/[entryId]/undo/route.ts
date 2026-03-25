@@ -35,8 +35,15 @@ export async function PATCH(
       }
     }
 
+    const VALID_STATUSES = ['WAITING', 'CALLED', 'CONFIRMED', 'SEATED', 'SKIPPED', 'CANCELLED', 'NO_SHOW_CONFIRM', 'NO_SHOW_ARRIVAL', 'EXPIRED'] as const
+    type ValidStatus = typeof VALID_STATUSES[number]
+
     if (!previousStatus || !previousData) {
       return NextResponse.json({ error: 'Missing previousStatus or previousData' }, { status: 400 })
+    }
+
+    if (!(VALID_STATUSES as readonly string[]).includes(previousStatus)) {
+      return NextResponse.json({ error: 'Invalid previousStatus' }, { status: 400 })
     }
 
     // Clear any reminder timer on undo (e.g. undoing a call back to WAITING)
