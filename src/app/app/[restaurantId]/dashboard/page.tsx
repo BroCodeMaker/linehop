@@ -124,16 +124,16 @@ function CountdownTimer({ deadline, totalSec }: { deadline: string; totalSec: nu
   );
 }
 
-function BufferTimer({ expiredAt }: { expiredAt: string }) {
+function BufferTimer({ expiredAt, bufferVisibilitySec }: { expiredAt: string; bufferVisibilitySec: number }) {
   const [secs, setSecs] = useState(0);
   const { t } = useTranslation();
   useEffect(() => {
-    const expiry = new Date(expiredAt).getTime() + 30 * 60 * 1000;
+    const expiry = new Date(expiredAt).getTime() + bufferVisibilitySec * 1000;
     const update = () => setSecs(Math.max(0, Math.floor((expiry - Date.now()) / 1000)));
     update();
     const timer = setInterval(update, 1000);
     return () => clearInterval(timer);
-  }, [expiredAt]);
+  }, [expiredAt, bufferVisibilitySec]);
   const m = Math.floor(secs / 60), sc = secs % 60;
   return <span style={{ fontSize: 11, color: "#9ca3af" }}>{t("hidden_in")} {m}:{sc.toString().padStart(2, "0")}</span>;
 }
@@ -181,6 +181,7 @@ export default function DashboardPage() {
   const [listClosed, setListClosed] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [maxCallAgain, setMaxCallAgain] = useState<number>(1);
+  const [bufferVisibilitySec, setBufferVisibilitySec] = useState<number>(600);
   const [callingNext, setCallingNext] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "ok" | "info" } | null>(null);
   const [changingStatus, setChangingStatus] = useState(false);
@@ -257,8 +258,9 @@ export default function DashboardPage() {
       const res = await fetch(`/api/restaurants/${restaurantId}/settings`, { credentials: "include" });
       if (res.ok) {
         const d = await res.json();
-        if (d.ok && d.settings?.maxCallAgain != null) {
-          setMaxCallAgain(d.settings.maxCallAgain);
+        if (d.ok && d.settings != null) {
+          if (d.settings.maxCallAgain != null) setMaxCallAgain(d.settings.maxCallAgain);
+          if (d.settings.bufferVisibilitySec != null) setBufferVisibilitySec(d.settings.bufferVisibilitySec);
         }
       }
     } catch { /* ignore */ }
@@ -636,11 +638,11 @@ export default function DashboardPage() {
   });
   const expiredEntries = entries.filter(e => {
     if (!["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status) && !isLocallyExpiredFn(e)) return false;
-    // Auto-hide NO_SHOW entries after 30 minutes (client-side filter, no DB delete)
+    // Auto-hide NO_SHOW entries after bufferVisibilitySec (client-side filter, no DB delete)
     if (["NO_SHOW_CONFIRM", "NO_SHOW_ARRIVAL"].includes(e.status)) {
       const refTime = e.expiredAt || e.createdAt;
-      const minutesSince = (Date.now() - new Date(refTime).getTime()) / 60000;
-      if (minutesSince > 30) return false;
+      const secsSince = (Date.now() - new Date(refTime).getTime()) / 1000;
+      if (secsSince > bufferVisibilitySec) return false;
     }
     return true;
   });
@@ -1111,6 +1113,7 @@ export default function DashboardPage() {
                     editForm={editForm}
                     editSubmitting={editSubmitting}
                     maxCallAgain={maxCallAgain}
+                    bufferVisibilitySec={bufferVisibilitySec}
                     onAction={handleAction}
                     onSeat={handleSeatClick}
                     onUndo={handleUndo}
@@ -1142,6 +1145,7 @@ export default function DashboardPage() {
                       editForm={editForm}
                       editSubmitting={editSubmitting}
                       maxCallAgain={maxCallAgain}
+                      bufferVisibilitySec={bufferVisibilitySec}
                       onAction={handleAction}
                       onSeat={handleSeatClick}
                       onUndo={handleUndo}
@@ -1171,6 +1175,7 @@ export default function DashboardPage() {
                       editForm={editForm}
                       editSubmitting={editSubmitting}
                       maxCallAgain={maxCallAgain}
+                      bufferVisibilitySec={bufferVisibilitySec}
                       onAction={handleAction}
                       onSeat={handleSeatClick}
                       onUndo={handleUndo}
@@ -1225,6 +1230,7 @@ type EntryRowProps = {
   editForm: { guestName: string; partySize: number; phoneE164: string };
   editSubmitting: boolean;
   maxCallAgain: number;
+  bufferVisibilitySec: number;
   onAction: (id: string, action: string) => void;
   onSeat: (entry: Entry) => void;
   onUndo: (id: string, action: "undo-seated" | "undo-skipped" | "re-call") => void;
@@ -1234,7 +1240,7 @@ type EntryRowProps = {
   onEditCancel: () => void;
 };
 
-function EntryRow({ entry, index, editingId, editForm, editSubmitting, maxCallAgain, onAction, onSeat, onUndo, onStartEdit, onEditChange, onEditSave, onEditCancel }: EntryRowProps) {
+function EntryRow({ entry, index, editingId, editForm, editSubmitting, maxCallAgain, bufferVisibilitySec, onAction, onSeat, onUndo, onStartEdit, onEditChange, onEditSave, onEditCancel }: EntryRowProps) {
   const { t } = useTranslation();
   const now = Date.now();
   const isLongWait = entry.status === "WAITING" && now - new Date(entry.createdAt).getTime() > 30 * 60 * 1000;
@@ -1280,13 +1286,13 @@ function EntryRow({ entry, index, editingId, editForm, editSubmitting, maxCallAg
         {entry.status === "NO_SHOW_CONFIRM" && (
           <>
             <span style={{ ...s.badge, background: "#fee2e2", color: "#991b1b" }}>⌛ {t("status_NO_SHOW_CONFIRM")}</span>
-            {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
+            {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} bufferVisibilitySec={bufferVisibilitySec} /></div>}
           </>
         )}
         {entry.status === "NO_SHOW_ARRIVAL" && (
           <>
             <span style={{ ...s.badge, background: "#ffedd5", color: "#9a3412" }}>⌛ {t("status_NO_SHOW_ARRIVAL")}</span>
-            {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} /></div>}
+            {entry.expiredAt && <div style={{ marginTop: 3 }}><BufferTimer expiredAt={entry.expiredAt} bufferVisibilitySec={bufferVisibilitySec} /></div>}
           </>
         )}
         {entry.status === "CALLED" && !locallyExpired && (

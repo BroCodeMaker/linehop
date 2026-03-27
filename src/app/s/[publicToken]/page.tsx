@@ -145,7 +145,7 @@ export default function StatusPage() {
             <div style={s.posLbl}>
               {data.position === 1
                 ? <span style={{ whiteSpace: "pre-line" }}>{t("status_first_in_line")}</span>
-                : `${data.position - 1} ${data.position - 1 === 1 ? t("status_group_before") : t("status_groups_before")}`}
+                : data.position - 1 === 1 ? t("status_group_before") : t("status_groups_before")}
             </div>
           </div>
         )}
