@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import CookieBanner from "@/components/CookieBanner";
 
 export const metadata: Metadata = {
   title: "LineHop",
@@ -10,6 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body style={{ margin: 0, padding: 0, fontFamily: "system-ui, sans-serif" }}>
         {children}
+        <CookieBanner />
       </body>
     </html>
   );

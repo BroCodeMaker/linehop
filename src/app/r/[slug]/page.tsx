@@ -35,6 +35,7 @@ export default function JoinPage() {
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [gdprConsent, setGdprConsent] = useState(false);
 
   async function fetchInfo() {
     try {
@@ -60,7 +61,7 @@ export default function JoinPage() {
       const res = await fetch(`/api/public/restaurants/${slug}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ partySize, phone, guestName: guestName || undefined, note: note || undefined }),
+        body: JSON.stringify({ partySize, phone, guestName: guestName || undefined, note: note || undefined, gdprConsent }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -206,9 +207,26 @@ export default function JoinPage() {
           <label style={s.label}>{t("join_note")}</label>
           <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("join_note_placeholder")} style={s.input} maxLength={200} />
 
+          <label style={s.gdprLabel}>
+            <input
+              type="checkbox"
+              checked={gdprConsent}
+              onChange={(e) => setGdprConsent(e.target.checked)}
+              required
+              style={{ marginRight: 8, flexShrink: 0, accentColor: "#E87722", width: 16, height: 16 }}
+            />
+            <span style={{ fontSize: 13, color: "#374151", lineHeight: 1.5 }}>
+              Sunt de acord cu{" "}
+              <a href="/politica-confidentialitate" target="_blank" rel="noopener noreferrer" style={{ color: "#E87722", textDecoration: "underline" }}>
+                Politica de confidențialitate
+              </a>
+              {" "}*
+            </span>
+          </label>
+
           {error && <p style={s.error}>{error}</p>}
 
-          <button type="submit" style={s.btn} disabled={submitting}>
+          <button type="submit" style={s.btn} disabled={submitting || !gdprConsent}>
             {submitting ? t("join_submitting") : `${t("join_submit")} →`}
           </button>
           <p style={{ fontSize: "12px", color: "#9ca3af", textAlign: "center", margin: "10px 0 0" }}>
@@ -285,4 +303,5 @@ const s: Record<string, React.CSSProperties> = {
   btn: { marginTop: "14px", padding: "17px", background: "linear-gradient(135deg, #E87722, #d96a18)", color: "#fff", border: "none", borderRadius: "14px", fontSize: "17px", fontWeight: 800, cursor: "pointer", boxShadow: "0 6px 20px rgba(232,119,34,0.35)", letterSpacing: "-0.01em" },
   muted: { fontSize: "13px", color: "#9ca3af", textAlign: "center" as const, marginTop: "12px" },
   error: { color: "#dc2626", fontSize: "13px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 14px" },
+  gdprLabel: { display: "flex", alignItems: "flex-start", marginTop: 12, cursor: "pointer", gap: 0 },
 };

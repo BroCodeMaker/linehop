@@ -10,6 +10,7 @@ const JoinSchema = z.object({
   phone: z.string().min(6),
   guestName: z.string().optional(),
   note: z.string().max(200).optional(),
+  gdprConsent: z.boolean().optional(),
 });
 
 export async function POST(
@@ -25,7 +26,7 @@ export async function POST(
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { partySize, phone, guestName, note } = parsed.data;
+    const { partySize, phone, guestName, note, gdprConsent } = parsed.data;
 
     const restaurant = await prisma.restaurant.findUnique({ where: { slug } });
     if (!restaurant) {
@@ -90,6 +91,8 @@ export async function POST(
         notes: note ?? null,
         status: "WAITING",
         createdAt: now,
+        gdprConsent: gdprConsent ?? false,
+        gdprConsentAt: gdprConsent ? now : null,
       },
     });
 
