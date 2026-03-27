@@ -6,7 +6,7 @@
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma migrate deploy && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
@@ -14,7 +14,8 @@
     "test:coverage": "vitest run --coverage",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "seed": "npx ts-node --esm scripts/seed.ts"
+    "seed": "npx ts-node --esm scripts/seed.ts",
+    "test:e2e": "npx ts-node --esm scripts/e2e-regression.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",
