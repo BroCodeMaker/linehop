@@ -644,7 +644,13 @@ export default function DashboardPage() {
     }
     return true;
   });
-  const recentEntries = entries.filter(e => ["SEATED", "SKIPPED"].includes(e.status));
+  const UNDO_WINDOW_MS = 5 * 60 * 1000; // 5 minute
+  const recentEntries = entries.filter(e => {
+    if (!["SEATED", "SKIPPED"].includes(e.status)) return false;
+    const actionTime = e.seatedAt || e.skippedAt;
+    if (!actionTime) return false;
+    return Date.now() - new Date(actionTime).getTime() < UNDO_WINDOW_MS;
+  });
 
   const statusCfg: Record<string, { label: string; active: string; icon: string }> = {
     OPEN:   { label: t("restStatus_OPEN"),   active: "#16a34a", icon: "🟢" },
