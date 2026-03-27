@@ -16,15 +16,17 @@ interface AuditLog {
 }
 
 const ACTION_CONFIG: Record<string, { emoji: string; label: string; color: string }> = {
-  CALLED:         { emoji: "📲", label: "Called",         color: "#f97316" },
-  SEATED:         { emoji: "✅", label: "Seated",         color: "#10b981" },
-  SKIPPED:        { emoji: "⏭️", label: "Skipped",        color: "#9ca3af" },
-  NO_SHOW:        { emoji: "❌", label: "No-show",        color: "#ef4444" },
-  CANCELLED:      { emoji: "🚫", label: "Cancelled",      color: "#9ca3af" },
-  STATUS_CHANGED: { emoji: "🔄", label: "Status changed", color: "#3b82f6" },
-  ADDED:          { emoji: "➕", label: "Added",          color: "#8b5cf6" },
-  CALL_AGAIN:     { emoji: "🔁", label: "Call again",     color: "#f59e0b" },
-  UNDO:           { emoji: "↩️", label: "Undo",           color: "#6b7280" },
+  CALLED:           { emoji: "📲", label: "Called",              color: "#f97316" },
+  SEATED:           { emoji: "✅", label: "Seated",              color: "#10b981" },
+  SKIPPED:          { emoji: "⏭️", label: "Skipped",             color: "#9ca3af" },
+  NO_SHOW:          { emoji: "❌", label: "No-show",             color: "#ef4444" },
+  NO_SHOW_CONFIRM:  { emoji: "⏱️", label: "No-show (confirm)",   color: "#ef4444" },
+  NO_SHOW_ARRIVAL:  { emoji: "⏱️", label: "No-show (arrival)",   color: "#dc2626" },
+  CANCELLED:        { emoji: "🚫", label: "Cancelled",           color: "#9ca3af" },
+  STATUS_CHANGED:   { emoji: "🔄", label: "Status changed",      color: "#3b82f6" },
+  ADDED:            { emoji: "➕", label: "Added",               color: "#8b5cf6" },
+  CALL_AGAIN:       { emoji: "🔁", label: "Call again",          color: "#f59e0b" },
+  UNDO:             { emoji: "↩️", label: "Undo",                color: "#6b7280" },
 };
 
 function formatTime(iso: string) {
@@ -177,6 +179,8 @@ export default function HistoryPage() {
                   const partySize = meta.partySize != null ? `👥 ${meta.partySize}` : "—";
                   let details = "";
                   if (log.action === "STATUS_CHANGED") details = `${meta.from} → ${meta.to}`;
+                  else if (log.action === "NO_SHOW_CONFIRM") details = `Confirmed → no show timeout expired`;
+                  else if (log.action === "NO_SHOW_ARRIVAL") details = `Confirmed → no show timeout expired`;
                   else if (meta.walkIn) details = "Walk-in";
                   else if (meta.previousStatus) details = `was ${meta.previousStatus}`;
 
