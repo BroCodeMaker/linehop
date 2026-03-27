@@ -223,6 +223,9 @@ export default function JoinPage() {
               {" "}*
             </span>
           </label>
+          <p style={{ fontSize: 11, color: "#9ca3af", margin: "4px 0 0 24px", lineHeight: 1.4 }}>
+            Numărul tău de telefon va fi folosit exclusiv pentru a te notifica pe WhatsApp când masa este pregătită. Nu îl stocăm după sesiune și nu îl transmitem către terți.
+          </p>
 
           {error && <p style={s.error}>{error}</p>}
 

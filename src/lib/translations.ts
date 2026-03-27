@@ -303,9 +303,9 @@ const ro = {
 
   // Landing page
   landing_badge: "🍽️ Lista de așteptare digitală pentru restaurante",
-  landing_hero_title1: "Restaurantul este plin?",
+  landing_hero_title1: "Restaurantul e plin?",
   landing_hero_title2: "Nu mai pierde clienți care pleacă.",
-  landing_hero_sub: "Clienții scanează QR-ul și intră în lista de așteptare. Îi anunți pe WhatsApp când masa este gata.",
+  landing_hero_sub: "Clienții scanează QR-ul, intră în lista de așteptare și primesc notificare pe WhatsApp când masa e gata. Zero cozi. Zero frustrare.",
   landing_demo_btn: "Programează demo →",
   landing_enter_dashboard: "Intră în dashboard",
   landing_how_title: "Cum funcționează?",
@@ -356,9 +356,9 @@ const ro = {
   landing_contact_sub: "Suntem aici să te ajutăm.",
 
   // Landing page — current content keys
-  landing_hero_main1: "Clienții nu mai pleacă.",
-  landing_hero_main2: "Masa îi cheamă înapoi.",
-  landing_hero_subtitle: "LineHop gestionează lista de așteptare prin QR și notificări, astfel încât clienții să revină exact când masa este pregătită.",
+  landing_hero_main1: "Nicio coadă.",
+  landing_hero_main2: "Clienții revin când masa e gata.",
+  landing_hero_subtitle: "LineHop gestionează lista de așteptare prin QR și WhatsApp — clienții pleacă liberi și revin automat când masa e pregătită.",
   landing_try_free_30: "Încearcă gratuit 30 zile",
   landing_problem_title: "Problema restaurantelor aglomerate",
   landing_problem_sub: "Fiecare seară aglomerată aduce aceleași probleme.",
@@ -686,7 +686,7 @@ const en: typeof ro = {
   landing_badge: "🍽️ Digital waitlist for restaurants",
   landing_hero_title1: "Restaurant is full?",
   landing_hero_title2: "Stop losing customers who walk away.",
-  landing_hero_sub: "Customers scan the QR code and join the waitlist. Notify them on WhatsApp when their table is ready.",
+  landing_hero_sub: "Customers scan the QR, join the waitlist, and get a WhatsApp notification when their table is ready. No queues. No frustration.",
   landing_demo_btn: "Schedule a demo →",
   landing_enter_dashboard: "Go to dashboard",
   landing_how_title: "How does it work?",
@@ -737,9 +737,9 @@ const en: typeof ro = {
   landing_contact_sub: "We are here to help.",
 
   // Landing page — current content keys
-  landing_hero_main1: "Customers don't leave.",
-  landing_hero_main2: "The table calls them back.",
-  landing_hero_subtitle: "LineHop manages the waitlist via QR and notifications, so customers return exactly when the table is ready.",
+  landing_hero_main1: "No queues.",
+  landing_hero_main2: "Customers return when the table is ready.",
+  landing_hero_subtitle: "LineHop manages your waitlist via QR and WhatsApp — customers leave freely and come back automatically when the table is ready.",
   landing_try_free_30: "Try free for 30 days",
   landing_problem_title: "The problem of crowded restaurants",
   landing_problem_sub: "Every busy evening brings the same problems.",
@@ -1067,7 +1067,7 @@ const hu: typeof ro = {
   landing_badge: "🍽️ Digitális várósor éttermeknek",
   landing_hero_title1: "Tele van az étterem?",
   landing_hero_title2: "Ne veszítsen el vendégeket, akik elmennek.",
-  landing_hero_sub: "A vendégek beolvassák a QR-kódot és csatlakoznak a várósorhoz. WhatsApp-on értesíti őket, amikor az asztaluk készen van.",
+  landing_hero_sub: "A vendégek beolvassák a QR-kódot, csatlakoznak a várósorhoz, és WhatsApp-értesítést kapnak, amikor az asztaluk készen van. Nincs sor. Nincs frusztráció.",
   landing_demo_btn: "Demó egyeztetése →",
   landing_enter_dashboard: "Irányítópultra",
   landing_how_title: "Hogyan működik?",
@@ -1118,9 +1118,9 @@ const hu: typeof ro = {
   landing_contact_sub: "Segítünk Önnek.",
 
   // Landing page — current content keys
-  landing_hero_main1: "A vendégek nem mennek el.",
-  landing_hero_main2: "Az asztal visszahívja őket.",
-  landing_hero_subtitle: "A LineHop QR-kód és értesítések segítségével kezeli a várólistát, így a vendégek pontosan akkor térnek vissza, amikor az asztal készen van.",
+  landing_hero_main1: "Nincs sor.",
+  landing_hero_main2: "A vendégek visszatérnek, amikor az asztal készen van.",
+  landing_hero_subtitle: "A LineHop QR és WhatsApp segítségével kezeli a várólistát — a vendégek szabadon elmehetnek és automatikusan visszatérnek, amikor az asztal készen van.",
   landing_try_free_30: "Próbálja 30 napig ingyen",
   landing_problem_title: "A zsúfolt éttermek problémája",
   landing_problem_sub: "Minden forgalmas este ugyanazokat a problémákat hozza.",
