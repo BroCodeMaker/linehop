@@ -47,6 +47,23 @@ export async function POST(
         },
       });
 
+      // Audit log: CALLED → NO_SHOW_CONFIRM
+      await prisma.auditLog.create({
+        data: {
+          restaurantId: id,
+          entryId: entryId,
+          action: "NO_SHOW_CONFIRM",
+          actorEmail: "system",
+          metadata: {
+            reason: "confirm_timeout",
+            previousStatus: "CALLED",
+            newStatus: "NO_SHOW_CONFIRM",
+            guestName: entry.guestName,
+            partySize: entry.partySize,
+          },
+        },
+      }).catch((err: unknown) => console.error("[no-show] audit log failed:", err));
+
       emitUpdate(id);
       return NextResponse.json({ ok: true, entry: updated });
     }
@@ -68,6 +85,23 @@ export async function POST(
           expiredReason: "NO_SHOW_ARRIVAL",
         },
       });
+
+      // Audit log: CONFIRMED → NO_SHOW_ARRIVAL
+      await prisma.auditLog.create({
+        data: {
+          restaurantId: id,
+          entryId: entryId,
+          action: "NO_SHOW_ARRIVAL",
+          actorEmail: "system",
+          metadata: {
+            reason: "arrival_timeout",
+            previousStatus: "CONFIRMED",
+            newStatus: "NO_SHOW_ARRIVAL",
+            guestName: entry.guestName,
+            partySize: entry.partySize,
+          },
+        },
+      }).catch((err: unknown) => console.error("[no-show] audit log failed:", err));
 
       emitUpdate(id);
       return NextResponse.json({ ok: true, entry: updated });
