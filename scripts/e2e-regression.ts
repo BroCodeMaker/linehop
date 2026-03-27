@@ -15,6 +15,7 @@
  */
 
 import { execSync, spawn } from "child_process";
+import { createHmac } from "crypto";
 import { PrismaClient } from "@prisma/client";
 
 const TEST_DB_URL =
@@ -25,6 +26,22 @@ const BASE_URL = process.env.E2E_BASE_URL || "http://localhost:3099";
 const RESTAURANT_SLUG = "e2e-test-restaurant";
 const TEST_PHONE = "+40711000001";
 const TEST_PHONE_2 = "+40711000002";
+
+// ─── Auth token generator (replicates lib/session.ts) ───────────────────────
+
+function b64url(buf: Buffer): string {
+  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
+function makeSessionCookie(secret: string = "test-secret-e2e-2026"): string {
+  const header = b64url(Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })));
+  const payload = { userId: "e2e-test-user", role: "admin", exp: Math.floor(Date.now() / 1000) + 86400 };
+  const body = b64url(Buffer.from(JSON.stringify(payload)));
+  const sig = b64url(createHmac("sha256", secret).update(`${header}.${body}`).digest());
+  return `${header}.${body}.${sig}`;
+}
+
+const SESSION_COOKIE = makeSessionCookie(process.env.NEXTAUTH_SECRET || "test-secret-e2e-2026");
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -39,10 +56,15 @@ function log(name: string, ok: boolean, detail: string = "") {
   if (ok) passed++; else failed++;
 }
 
-async function api(path: string, opts: RequestInit = {}): Promise<{ status: number; body: Record<string, unknown> }> {
+async function api(path: string, opts: RequestInit = {}, auth = false): Promise<{ status: number; body: Record<string, unknown> }> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(opts.headers as Record<string, string> || {}),
+  };
+  if (auth) headers["Cookie"] = `session=${SESSION_COOKIE}`;
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
     ...opts,
+    headers,
   });
   let body: Record<string, unknown> = {};
   try { body = await res.json(); } catch {}
@@ -166,9 +188,9 @@ async function runTests() {
   // ── 4. CALL NEXT din dashboard ───────────────────────────────────────────
   console.log("\n4. Call next din dashboard:");
   {
-    const { status, body } = await api(`/api/restaurants/${restId}/queue/call-next`, {
+    const { status, body } = await api(`/api/restaurants/${restId}/call-next`, {
       method: "POST",
-    });
+    }, true);
     const ok = status === 200 && body.ok === true;
     log("POST /call-next → 200", ok, `status=${status}`);
 
@@ -199,7 +221,7 @@ async function runTests() {
   // ── 5. GUEST CONFIRM (simulează webhook WhatsApp "DA") ───────────────────
   console.log("\n5. Guest confirm:");
   if (publicToken) {
-    const { status, body } = await api(`/api/public/confirm/${publicToken}`, {
+    const { status, body } = await api(`/api/public/entry/${publicToken}/confirm`, {
       method: "POST",
       body: JSON.stringify({}),
     });
@@ -225,9 +247,9 @@ async function runTests() {
   {
     const entry = await prisma.waitlistEntry.findFirst({ where: { publicToken } });
     if (entry) {
-      const { status, body } = await api(`/api/restaurants/${restId}/queue/${entry.id}/seat`, {
+      const { status, body } = await api(`/api/restaurants/${restId}/entries/${entry.id}/seat`, {
         method: "POST",
-      });
+      }, true);
       const ok = status === 200;
       log("POST /seat → 200", ok, `status=${status}`);
 
@@ -257,9 +279,9 @@ async function runTests() {
       const token2 = joinBody.publicToken as string;
       const entry2 = await prisma.waitlistEntry.findFirst({ where: { publicToken: token2 } });
       if (entry2) {
-        const { status } = await api(`/api/restaurants/${restId}/queue/${entry2.id}/skip`, {
+        const { status } = await api(`/api/restaurants/${restId}/entries/${entry2.id}/skip`, {
           method: "POST",
-        });
+        }, true);
         log("POST /skip → 200", status === 200, `status=${status}`);
         const updated = await prisma.waitlistEntry.findUnique({ where: { id: entry2.id } });
         log("Entry în DB → SKIPPED", updated?.status === "SKIPPED", `status=${updated?.status}`);
@@ -293,12 +315,8 @@ async function runTests() {
     });
 
     // Declanșez expiry via API intern
-    const { status, body } = await api("/api/internal/expire-entries", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-internal-secret": process.env.INTERNAL_SECRET || "linehop-internal-2026",
-      },
+    const { status, body } = await api("/api/internal/expire", {
+      method: "GET",
     });
     log("POST /expire-entries → 200", status === 200, `status=${status} expired=${body.expired}`);
 
