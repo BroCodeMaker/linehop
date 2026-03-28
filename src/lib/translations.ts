@@ -278,6 +278,12 @@ const ro = {
   status_cancel_modal_body: "Ești sigur că vrei să anulezi? Nu vei mai putea fi adăugat în această coadă astăzi.",
   status_cancel_modal_no: "Nu, rămân",
   status_cancel_modal_yes: "Da, anulează",
+  status_edit_party_btn: "✏️ Editează nr. grup",
+  status_edit_party_title: "Editează numărul de persoane",
+  status_edit_party_save: "Salvează",
+  status_edit_party_saving: "Se salvează...",
+  status_edit_party_cancel: "Anulează",
+  status_edit_party_success: "Numărul de persoane a fost actualizat!",
 
   // Restaurant list (app index)
   app_title: "🍽️ LineHop Admin",
@@ -661,6 +667,12 @@ const en: typeof ro = {
   status_cancel_modal_body: "Are you sure you want to cancel? You will not be able to re-join the queue today.",
   status_cancel_modal_no: "No, stay",
   status_cancel_modal_yes: "Yes, cancel",
+  status_edit_party_btn: "✏️ Edit group size",
+  status_edit_party_title: "Edit number of people",
+  status_edit_party_save: "Save",
+  status_edit_party_saving: "Saving...",
+  status_edit_party_cancel: "Cancel",
+  status_edit_party_success: "Group size updated!",
 
   app_title: "🍽️ LineHop Admin",
   app_new_restaurant: "➕ New restaurant",
@@ -1042,6 +1054,12 @@ const hu: typeof ro = {
   status_cancel_modal_body: "Biztosan le szeretné mondani? Ma már nem csatlakozhat újra a sorba.",
   status_cancel_modal_no: "Nem, maradok",
   status_cancel_modal_yes: "Igen, lemondja",
+  status_edit_party_btn: "✏️ Csoport méretének szerkesztése",
+  status_edit_party_title: "Személyek számának szerkesztése",
+  status_edit_party_save: "Mentés",
+  status_edit_party_saving: "Mentés...",
+  status_edit_party_cancel: "Mégse",
+  status_edit_party_success: "A csoport mérete frissítve!",
 
   app_title: "🍽️ LineHop Admin",
   app_new_restaurant: "➕ Új étterem",

@@ -11,7 +11,7 @@ export async function GET(
 
     const entry = await prisma.waitlistEntry.findUnique({
       where: { publicToken },
-      include: { restaurant: { select: { name: true, slug: true } } },
+      include: { restaurant: { include: { settings: { select: { maxPartySize: true } } } } },
     });
 
     if (!entry) {
@@ -31,6 +31,7 @@ export async function GET(
       guestName: entry.guestName,
       restaurantName: entry.restaurant.name,
       restaurantSlug: entry.restaurant.slug,
+      maxPartySize: entry.restaurant.settings?.maxPartySize ?? 10,
       position,
       calledAt: entry.calledAt,
       confirmedAt: entry.confirmedAt,

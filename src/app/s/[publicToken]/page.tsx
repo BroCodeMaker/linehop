@@ -14,6 +14,7 @@ type EntryData = {
   position?: number;
   confirmDeadlineAt?: string;
   arrivalDeadlineAt?: string;
+  maxPartySize?: number;
 };
 
 const FOOD_BG = `radial-gradient(ellipse at 10% 20%, rgba(251,146,60,0.10) 0%, transparent 50%),
@@ -75,6 +76,10 @@ export default function StatusPage() {
   const [canceling, setCanceling] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showEditPartyModal, setShowEditPartyModal] = useState(false);
+  const [editPartySize, setEditPartySize] = useState(1);
+  const [savingParty, setSavingParty] = useState(false);
+  const [editPartySuccess, setEditPartySuccess] = useState(false);
 
   const confirmSecs = useCountdown(data?.status === "CALLED" ? data.confirmDeadlineAt : undefined);
   const arrivalSecs = useCountdown(data?.status === "CONFIRMED" ? data.arrivalDeadlineAt : undefined);
@@ -108,6 +113,25 @@ export default function StatusPage() {
       const res = await fetch(`/api/public/entry/${publicToken}/cancel`, { method: "POST" });
       if (res.ok) await fetchStatus();
     } finally { setCanceling(false); }
+  }
+
+  async function handleSavePartySize() {
+    setSavingParty(true);
+    try {
+      const res = await fetch(`/api/public/entry/${publicToken}/party-size`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ partySize: editPartySize }),
+      });
+      if (res.ok) {
+        setShowEditPartyModal(false);
+        setEditPartySuccess(true);
+        await fetchStatus();
+        setTimeout(() => setEditPartySuccess(false), 3000);
+      }
+    } finally {
+      setSavingParty(false);
+    }
   }
 
   if (error) return (
@@ -200,10 +224,31 @@ export default function StatusPage() {
           <div style={s.warnBox}>{t("status_skipped_msg")}</div>
         )}
 
-        {isActive && (
-          <button onClick={() => setShowCancelModal(true)} disabled={canceling} style={s.cancelBtn}>
+        {isActive && data.status === "WAITING" && (
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 20, flexWrap: "wrap" }}>
+            <button
+              onClick={() => {
+                setEditPartySize(data.partySize);
+                setShowEditPartyModal(true);
+              }}
+              style={{ padding: "10px 18px", background: "#fff7ed", color: "#ea580c", border: "1.5px solid #fed7aa", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}
+            >
+              {t("status_edit_party_btn")}
+            </button>
+            <button onClick={() => setShowCancelModal(true)} disabled={canceling} style={s.cancelBtn}>
+              {canceling ? t("status_canceling") : t("status_cancel_btn")}
+            </button>
+          </div>
+        )}
+        {isActive && data.status !== "WAITING" && (
+          <button onClick={() => setShowCancelModal(true)} disabled={canceling} style={{ ...s.cancelBtn, marginTop: 20 }}>
             {canceling ? t("status_canceling") : t("status_cancel_btn")}
           </button>
+        )}
+        {editPartySuccess && (
+          <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", fontSize: 13, fontWeight: 600, color: "#166534", textAlign: "center", marginTop: 10 }}>
+            {t("status_edit_party_success")}
+          </div>
         )}
 
         {isActive && <p style={s.refresh}>{t("status_auto_refresh")}</p>}
@@ -234,6 +279,41 @@ export default function StatusPage() {
                 style={{ padding: "10px 24px", background: "#dc2626", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
               >
                 {t("status_cancel_modal_yes")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditPartyModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowEditPartyModal(false)}>
+          <div style={{ background: "#fff", borderRadius: 20, padding: 32, maxWidth: 360, width: "90%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", textAlign: "center" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 28, marginBottom: 10 }}>👥</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1a1a", marginBottom: 20 }}>{t("status_edit_party_title")}</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, marginBottom: 24 }}>
+              <button
+                onClick={() => setEditPartySize(p => Math.max(1, p - 1))}
+                style={{ width: 44, height: 44, borderRadius: "50%", border: "1.5px solid #e5e7eb", background: "#f9fafb", fontSize: 22, cursor: "pointer", fontWeight: 700 }}
+              >−</button>
+              <span style={{ fontSize: 40, fontWeight: 900, color: "#ea580c", minWidth: 60, textAlign: "center" }}>{editPartySize}</span>
+              <button
+                onClick={() => setEditPartySize(p => Math.min(data?.maxPartySize ?? 20, p + 1))}
+                style={{ width: 44, height: 44, borderRadius: "50%", border: "1.5px solid #e5e7eb", background: "#f9fafb", fontSize: 22, cursor: "pointer", fontWeight: 700 }}
+              >+</button>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+              <button
+                onClick={() => setShowEditPartyModal(false)}
+                style={{ padding: "10px 24px", background: "transparent", color: "#6b7280", border: "1.5px solid #e5e7eb", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 600 }}
+              >
+                {t("status_edit_party_cancel")}
+              </button>
+              <button
+                onClick={handleSavePartySize}
+                disabled={savingParty}
+                style={{ padding: "10px 24px", background: "linear-gradient(135deg, #ea580c, #dc2626)", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 700 }}
+              >
+                {savingParty ? t("status_edit_party_saving") : t("status_edit_party_save")}
               </button>
             </div>
           </div>
